@@ -130,6 +130,15 @@ header h1 {
   gap: 10px;
 }
 
+.backup-controls {
+  margin-top: 5px;
+  padding-top: 15px;
+  border-top: 2px solid var(--beige);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
 .sort-select {
   padding: 8px 12px;
   border: 1px solid var(--gray-300);

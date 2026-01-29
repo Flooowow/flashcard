@@ -30,6 +30,13 @@ function setupEventListeners() {
   document.getElementById('cancelEditBtn').addEventListener('click', cancelEdit);
   document.getElementById('deleteCardBtn').addEventListener('click', deleteCard);
 
+  // Export / Import
+  document.getElementById('exportBtn').addEventListener('click', exportCards);
+  document.getElementById('importBtn').addEventListener('click', () => {
+    document.getElementById('importFile').click();
+  });
+  document.getElementById('importFile').addEventListener('change', importCards);
+
   // Mode quiz
   document.getElementById('verifyBtn').addEventListener('click', verifyAnswer);
   document.getElementById('quizInput').addEventListener('keypress', (e) => {
@@ -424,6 +431,95 @@ function escapeHtml(text) {
   return div.innerHTML;
 }
 
+// ==================== EXPORT / IMPORT ====================
+function exportCards() {
+  if (cards.length === 0) {
+    showToast('Aucune carte à exporter', 'error');
+    return;
+  }
+
+  const data = {
+    version: '1.0',
+    exported: new Date().toISOString(),
+    totalCards: cards.length,
+    cards: cards
+  };
+
+  const dataStr = JSON.stringify(data, null, 2);
+  const dataBlob = new Blob([dataStr], { type: 'application/json' });
+  const url = URL.createObjectURL(dataBlob);
+  const link = document.createElement('a');
+  link.href = url;
+  
+  // Nom du fichier avec date
+  const date = new Date().toISOString().split('T')[0];
+  link.download = `quizart-backup-${date}.json`;
+  
+  link.click();
+  URL.revokeObjectURL(url);
+  
+  showToast(`✅ ${cards.length} carte(s) sauvegardée(s) !`, 'success');
+}
+
+function importCards(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const imported = JSON.parse(e.target.result);
+      
+      // Validation
+      if (!imported.cards || !Array.isArray(imported.cards)) {
+        showToast('❌ Fichier invalide', 'error');
+        return;
+      }
+
+      // Confirmation si des cartes existent déjà
+      if (cards.length > 0) {
+        const replace = confirm(
+          `⚠️ Vous avez déjà ${cards.length} carte(s).\n\n` +
+          `Voulez-vous :\n` +
+          `• OK = REMPLACER toutes vos cartes par les ${imported.cards.length} carte(s) du fichier\n` +
+          `• Annuler = AJOUTER les ${imported.cards.length} carte(s) aux cartes existantes`
+        );
+
+        if (replace) {
+          cards = imported.cards;
+          showToast(`✅ ${imported.cards.length} carte(s) restaurée(s) !`, 'success');
+        } else {
+          // Ajouter avec nouveaux IDs pour éviter les conflits
+          const newCards = imported.cards.map(card => ({
+            ...card,
+            id: Date.now() + Math.random(),
+            order: cards.length + card.order
+          }));
+          cards = [...cards, ...newCards];
+          showToast(`✅ ${newCards.length} carte(s) ajoutée(s) !`, 'success');
+        }
+      } else {
+        cards = imported.cards;
+        showToast(`✅ ${imported.cards.length} carte(s) restaurée(s) !`, 'success');
+      }
+
+      // Réinitialiser l'éditeur
+      currentEditId = null;
+      document.getElementById('cardEditor').style.display = 'none';
+      
+      renderCardsList();
+      saveToLocalStorage();
+      
+    } catch (err) {
+      console.error(err);
+      showToast('❌ Erreur : fichier corrompu', 'error');
+    }
+  };
+  
+  reader.readAsText(file);
+  event.target.value = ''; // Reset input
+}
+
 // ==================== STORAGE ====================
 function saveToLocalStorage() {
   try {
@@ -478,5 +574,3 @@ function importData(file) {
 
 // Rendre les fonctions globales pour onclick
 window.selectCard = selectCard;
-window.exportData = exportData;
-window.importData = importData;

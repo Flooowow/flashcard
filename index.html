@@ -9,8 +9,13 @@
 <body>
   <!-- Header -->
   <header>
-    <h1>Quizart</h1>
-    <p class="tagline">Découvrez l'histoire de l'art autrement</p>
+    <div class="header-left">
+      <img src="logo.jpg" alt="QuizArt Logo" class="header-logo">
+      <div class="header-text">
+        <h1>Quizart</h1>
+        <p class="tagline">Découvrez l'histoire de l'art autrement</p>
+      </div>
+    </div>
     <div class="mode-toggle">
       <button id="editModeBtn" class="mode-btn active">✏️ Mode Édition</button>
       <button id="quizModeBtn" class="mode-btn">🎯 Mode Quiz</button>
@@ -24,6 +29,26 @@
       <aside class="cards-sidebar">
         <div class="sidebar-header">
           <h2>📚 Cartes</h2>
+          
+          <!-- Statistiques globales -->
+          <div id="globalStats" class="global-stats">
+            <h3>📊 Mes statistiques</h3>
+            <div class="stats-mini-grid">
+              <div class="stat-mini-box">
+                <span class="stat-mini-number" id="globalTotalCards">0</span>
+                <span class="stat-mini-label">Cartes</span>
+              </div>
+              <div class="stat-mini-box">
+                <span class="stat-mini-number" id="globalToWork">0</span>
+                <span class="stat-mini-label">À travailler</span>
+              </div>
+              <div class="stat-mini-box">
+                <span class="stat-mini-number stat-success" id="globalSuccessRate">0%</span>
+                <span class="stat-mini-label">Taux global</span>
+              </div>
+            </div>
+          </div>
+          
           <div class="sidebar-controls">
             <button id="addCardBtn" class="btn btn-primary">➕ Nouvelle carte</button>
             <select id="sortSelect" class="sort-select">

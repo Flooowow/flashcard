@@ -45,12 +45,20 @@ function setupEventListeners() {
 
   // Mode quiz
   document.getElementById('verifyBtn').addEventListener('click', verifyAnswer);
+  document.getElementById('nextCardBtn').addEventListener('click', () => {
+    nextQuizCard();
+    quizAnswered = false;
+  });
   
   const quizInput = document.getElementById('quizInput');
   
-  // 🔧 GESTION AMÉLIORÉE DE LA TOUCHE ENTRÉE
-  quizInput.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') {
+  // 🔧 GESTION GLOBALE DE LA TOUCHE ENTRÉE (avec délégation au document)
+  document.addEventListener('keydown', (e) => {
+    // Vérifier qu'on est en mode quiz et que l'input est focusé ou que la carte quiz est visible
+    const quizCard = document.getElementById('quizCard');
+    const isQuizVisible = quizCard && quizCard.style.display !== 'none';
+    
+    if (e.key === 'Enter' && isQuizVisible) {
       e.preventDefault();
       
       if (!quizAnswered) {
@@ -62,8 +70,6 @@ function setupEventListeners() {
       }
     }
   });
-  
-  document.getElementById('nextCardBtn').addEventListener('click', nextQuizCard);
   document.getElementById('prevCardBtn').addEventListener('click', prevQuizCard);
   document.getElementById('restartQuizBtn').addEventListener('click', startQuiz);
   document.getElementById('viewHistoryBtn').addEventListener('click', showHistoryModal);
@@ -253,6 +259,7 @@ function saveCard() {
   renderCardsList();
   saveToLocalStorage();
   showToast('Carte enregistrée !', 'success');
+  updateGlobalStats();
 }
 
 async function deleteCard() {
@@ -407,6 +414,7 @@ function renderCardsList() {
         <p style="text-align: center; color: #6b7280;">Aucune carte pour le moment</p>
       </div>
     `;
+    updateGlobalStats();
     return;
   }
 
@@ -429,6 +437,33 @@ function renderCardsList() {
       </div>
     `;
   }).join('');
+  
+  // 📊 Mettre à jour les stats globales
+  updateGlobalStats();
+}
+
+// 📊 NOUVELLE FONCTION : Calculer et afficher les statistiques globales
+function updateGlobalStats() {
+  const totalCards = cards.length;
+  const toWorkCards = cards.filter(c => c.toWork).length;
+  
+  // Calculer le taux de réussite global
+  let totalPlayed = 0;
+  let totalCorrect = 0;
+  
+  cards.forEach(card => {
+    if (card.stats) {
+      totalPlayed += card.stats.played;
+      totalCorrect += card.stats.correct;
+    }
+  });
+  
+  const globalSuccessRate = totalPlayed > 0 ? Math.round((totalCorrect / totalPlayed) * 100) : 0;
+  
+  // Mettre à jour l'affichage
+  document.getElementById('globalTotalCards').textContent = totalCards;
+  document.getElementById('globalToWork').textContent = toWorkCards;
+  document.getElementById('globalSuccessRate').textContent = globalSuccessRate + '%';
 }
 
 // ==================== QUIZ MODE ====================

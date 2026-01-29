@@ -44,9 +44,25 @@ function setupEventListeners() {
 
   // Mode quiz
   document.getElementById('verifyBtn').addEventListener('click', verifyAnswer);
-  document.getElementById('quizInput').addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') verifyAnswer();
+  
+  const quizInput = document.getElementById('quizInput');
+  quizInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const verifyBtn = document.getElementById('verifyBtn');
+      const nextBtn = document.getElementById('nextCardBtn');
+      
+      // Si le bouton vérifier est actif, on vérifie
+      if (!verifyBtn.disabled) {
+        verifyAnswer();
+      }
+      // Sinon si le feedback est affiché, on passe à la suivante
+      else if (document.getElementById('quizFeedback').style.display !== 'none') {
+        nextQuizCard();
+      }
+    }
   });
+  
   document.getElementById('nextCardBtn').addEventListener('click', nextQuizCard);
   document.getElementById('prevCardBtn').addEventListener('click', prevQuizCard);
   document.getElementById('restartQuizBtn').addEventListener('click', startQuiz);
@@ -97,6 +113,49 @@ function showToast(message, type = 'info') {
     toast.style.animation = 'slideIn 0.3s ease reverse';
     setTimeout(() => toast.remove(), 300);
   }, 3000);
+}
+
+// ==================== CONFIRMATION MODAL ====================
+function showConfirm(title, message) {
+  return new Promise((resolve) => {
+    const modal = document.getElementById('confirmModal');
+    document.getElementById('confirmTitle').textContent = title;
+    document.getElementById('confirmMessage').textContent = message;
+    
+    modal.style.display = 'flex';
+    
+    const handleYes = () => {
+      modal.style.display = 'none';
+      cleanup();
+      resolve(true);
+    };
+    
+    const handleNo = () => {
+      modal.style.display = 'none';
+      cleanup();
+      resolve(false);
+    };
+    
+    const yesBtn = document.getElementById('confirmYes');
+    const noBtn = document.getElementById('confirmNo');
+    
+    yesBtn.addEventListener('click', handleYes);
+    noBtn.addEventListener('click', handleNo);
+    
+    // ESC pour annuler
+    const handleEscape = (e) => {
+      if (e.key === 'Escape') {
+        handleNo();
+      }
+    };
+    document.addEventListener('keydown', handleEscape);
+    
+    function cleanup() {
+      yesBtn.removeEventListener('click', handleYes);
+      noBtn.removeEventListener('click', handleNo);
+      document.removeEventListener('keydown', handleEscape);
+    }
+  });
 }
 
 // ==================== CARDS MANAGEMENT ====================
@@ -204,10 +263,15 @@ function saveCard() {
   showToast('Carte enregistrée !', 'success');
 }
 
-function deleteCard() {
+async function deleteCard() {
   if (!currentEditId) return;
   
-  if (!confirm('Voulez-vous vraiment supprimer cette carte ?')) return;
+  const confirmed = await showConfirm(
+    'Supprimer la carte ?',
+    'Voulez-vous vraiment supprimer cette carte ? Cette action est irréversible.'
+  );
+  
+  if (!confirmed) return;
 
   cards = cards.filter(c => c.id !== currentEditId);
   currentEditId = null;
@@ -252,9 +316,15 @@ function toggleToWork() {
   renderCardsList();
 }
 
-function resetCardStats() {
+async function resetCardStats() {
   if (!currentEditId) return;
-  if (!confirm('Réinitialiser les statistiques de cette carte ?')) return;
+  
+  const confirmed = await showConfirm(
+    'Réinitialiser les statistiques ?',
+    'Voulez-vous remettre à zéro toutes les statistiques de cette carte ?'
+  );
+  
+  if (!confirmed) return;
 
   const card = cards.find(c => c.id === currentEditId);
   if (!card) return;
@@ -481,7 +551,39 @@ function verifyAnswer() {
   document.querySelector('.feedback-icon').textContent = isCorrect ? '✅' : '❌';
   document.querySelector('.feedback-text').textContent = isCorrect ? 
     'Bravo ! Bonne réponse' : 'Pas tout à fait...';
-  document.getElementById('correctAnswer').textContent = correctAnswer;
+  
+  // Afficher la réponse correcte avec l'erreur en gras
+  const correctAnswerEl = document.getElementById('correctAnswer');
+  if (isCorrect) {
+    correctAnswerEl.textContent = correctAnswer;
+  } else {
+    // Mettre en gras ce qui manque/est faux
+    let displayAnswer = '';
+    
+    if (!artistMatch) {
+      displayAnswer += `<strong>${card.artist}</strong> - `;
+    } else {
+      displayAnswer += `${card.artist} - `;
+    }
+    
+    if (!titleMatch) {
+      displayAnswer += `<strong>${card.title}</strong> - `;
+    } else {
+      displayAnswer += `${card.title} - `;
+    }
+    
+    displayAnswer += card.date;
+    
+    // Afficher aussi ce que l'utilisateur a écrit
+    correctAnswerEl.innerHTML = `
+      <div style="margin-bottom: 10px;">
+        <strong>Votre réponse :</strong> <span style="color: var(--danger);">${escapeHtml(input.value)}</span>
+      </div>
+      <div>
+        <strong>Réponse correcte :</strong> ${displayAnswer}
+      </div>
+    `;
+  }
   
   // Désactiver l'input
   input.disabled = true;
@@ -594,7 +696,7 @@ function importCards(event) {
   if (!file) return;
 
   const reader = new FileReader();
-  reader.onload = (e) => {
+  reader.onload = async (e) => {
     try {
       const imported = JSON.parse(e.target.result);
       
@@ -606,11 +708,9 @@ function importCards(event) {
 
       // Confirmation si des cartes existent déjà
       if (cards.length > 0) {
-        const replace = confirm(
-          `⚠️ Vous avez déjà ${cards.length} carte(s).\n\n` +
-          `Voulez-vous :\n` +
-          `• OK = REMPLACER toutes vos cartes par les ${imported.cards.length} carte(s) du fichier\n` +
-          `• Annuler = AJOUTER les ${imported.cards.length} carte(s) aux cartes existantes`
+        const replace = await showConfirm(
+          'Remplacer ou ajouter ?',
+          `Vous avez déjà ${cards.length} carte(s).\n\nCliquez "Oui" pour REMPLACER toutes vos cartes par les ${imported.cards.length} carte(s) du fichier.\n\nCliquez "Non" pour AJOUTER les cartes aux existantes.`
         );
 
         if (replace) {
@@ -803,8 +903,13 @@ function drawProgressChart() {
   ctx.fillText('📈 Évolution de vos performances', width / 2, 25);
 }
 
-function clearHistory() {
-  if (!confirm('Voulez-vous vraiment effacer tout l\'historique ?')) return;
+async function clearHistory() {
+  const confirmed = await showConfirm(
+    'Effacer l\'historique ?',
+    'Voulez-vous vraiment supprimer tout l\'historique de vos quiz ? Cette action est irréversible.'
+  );
+  
+  if (!confirmed) return;
   
   quizHistory = [];
   saveHistoryToLocalStorage();

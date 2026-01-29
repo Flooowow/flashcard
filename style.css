@@ -663,12 +663,15 @@ header h1 {
 
 .correct-answer {
   font-size: 14px;
-  color: var(--gray-700);
-  margin-top: 10px;
+  color: var(--anthracite);
+  margin-top: 15px;
+  line-height: 1.6;
 }
 
 .correct-answer strong {
-  color: var(--dark-blue);
+  color: var(--burgundy);
+  display: inline-block;
+  margin-right: 5px;
 }
 
 /* Quiz Result */
@@ -865,6 +868,41 @@ header h1 {
   display: flex;
   justify-content: space-between;
   gap: 15px;
+}
+
+/* Confirmation Modal */
+.modal-confirm {
+  max-width: 400px;
+  text-align: center;
+}
+
+.confirm-icon {
+  font-size: 64px;
+  margin-bottom: 20px;
+}
+
+.modal-confirm h3 {
+  color: var(--burgundy);
+  margin-bottom: 15px;
+  font-size: 22px;
+}
+
+.modal-confirm p {
+  color: var(--anthracite);
+  margin-bottom: 25px;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+.modal-buttons {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+
+.modal-buttons .btn {
+  flex: 1;
+  max-width: 150px;
 }
 
 /* Quiz Navigation */

@@ -7,6 +7,7 @@ let quizCards = [];
 let quizStats = { correct: 0, wrong: 0 };
 let quizHistory = []; // Historique des sessions
 let quizMode = 'all'; // 'all' ou 'towork'
+let quizAnswered = false; // 🔧 NOUVEAU : Flag pour savoir si on a déjà répondu
 
 // ==================== INITIALISATION ====================
 document.addEventListener('DOMContentLoaded', () => {
@@ -47,32 +48,22 @@ function setupEventListeners() {
   
   const quizInput = document.getElementById('quizInput');
   
-  // Gestion globale de ENTER dans le quiz
-  let quizAnswered = false;
-  
+  // 🔧 GESTION AMÉLIORÉE DE LA TOUCHE ENTRÉE
   quizInput.addEventListener('keypress', (e) => {
     if (e.key === 'Enter') {
       e.preventDefault();
       
       if (!quizAnswered) {
-        // Première pression : vérifier
+        // Première pression : vérifier la réponse
         verifyAnswer();
-        quizAnswered = true;
       } else {
-        // Deuxième pression : carte suivante
+        // Deuxième pression : passer à la carte suivante
         nextQuizCard();
-        quizAnswered = false;
       }
     }
   });
   
-  // Reset du flag quand on charge une nouvelle carte
-  window.resetQuizAnswered = () => { quizAnswered = false; };
-  
-  document.getElementById('nextCardBtn').addEventListener('click', () => {
-    nextQuizCard();
-    quizAnswered = false;
-  });
+  document.getElementById('nextCardBtn').addEventListener('click', nextQuizCard);
   document.getElementById('prevCardBtn').addEventListener('click', prevQuizCard);
   document.getElementById('restartQuizBtn').addEventListener('click', startQuiz);
   document.getElementById('viewHistoryBtn').addEventListener('click', showHistoryModal);
@@ -176,7 +167,6 @@ function createNewCard() {
     date: '',
     image: null,
     order: cards.length,
-    // Nouvelles propriétés
     toWork: false,
     stats: {
       played: 0,
@@ -197,7 +187,6 @@ function selectCard(cardId) {
   const card = cards.find(c => c.id === cardId);
   if (!card) return;
 
-  // S'assurer que card a les nouvelles propriétés
   if (!card.stats) {
     card.stats = { played: 0, correct: 0, wrong: 0, successRate: 0 };
   }
@@ -205,22 +194,18 @@ function selectCard(cardId) {
     card.toWork = false;
   }
 
-  // Mise à jour UI
   document.querySelectorAll('.card-item').forEach(item => {
     item.classList.toggle('active', parseInt(item.dataset.cardId) === cardId);
   });
 
-  // Afficher l'éditeur
   document.querySelector('.editor-content .empty-state')?.remove();
   const editor = document.getElementById('cardEditor');
   editor.style.display = 'block';
 
-  // Remplir le formulaire
   document.getElementById('cardArtist').value = card.artist || '';
   document.getElementById('cardTitle').value = card.title || '';
   document.getElementById('cardDate').value = card.date || '';
 
-  // Afficher l'image si elle existe
   const preview = document.getElementById('imagePreview');
   if (card.image) {
     preview.innerHTML = `<img src="${card.image}" alt="Aperçu">`;
@@ -228,7 +213,6 @@ function selectCard(cardId) {
     preview.innerHTML = '';
   }
 
-  // Mettre à jour le bouton "À travailler"
   const toWorkBtn = document.getElementById('toggleToWorkBtn');
   if (card.toWork) {
     toWorkBtn.textContent = '✅ À travailler';
@@ -238,7 +222,6 @@ function selectCard(cardId) {
     toWorkBtn.classList.remove('active');
   }
 
-  // Afficher les statistiques
   document.getElementById('statPlayed').textContent = card.stats.played;
   document.getElementById('statCorrect').textContent = card.stats.correct;
   document.getElementById('statWrong').textContent = card.stats.wrong;
@@ -285,7 +268,6 @@ async function deleteCard() {
   cards = cards.filter(c => c.id !== currentEditId);
   currentEditId = null;
   
-  // Réinitialiser l'éditeur
   document.getElementById('cardEditor').style.display = 'none';
   const editorContent = document.querySelector('.editor-content');
   if (!document.querySelector('.empty-state')) {
@@ -353,7 +335,6 @@ function cancelEdit() {
   if (currentEditId) {
     const card = cards.find(c => c.id === currentEditId);
     if (card && !card.artist && !card.title && !card.date) {
-      // Si la carte est vide, la supprimer
       cards = cards.filter(c => c.id !== currentEditId);
       renderCardsList();
       saveToLocalStorage();
@@ -452,7 +433,6 @@ function renderCardsList() {
 
 // ==================== QUIZ MODE ====================
 function startQuiz() {
-  // Filtrer les cartes selon le mode
   let availableCards = cards.filter(c => c.artist && c.title && c.date && c.image);
   
   if (quizMode === 'towork') {
@@ -473,12 +453,10 @@ function startQuiz() {
     return;
   }
 
-  // Mélanger les cartes
   quizCards = shuffleArray([...availableCards]);
-  
-  // Réinitialiser
   currentQuizIndex = 0;
   quizStats = { correct: 0, wrong: 0 };
+  quizAnswered = false;
   
   document.getElementById('quizEmpty').style.display = 'none';
   document.getElementById('quizCard').style.display = 'block';
@@ -495,25 +473,20 @@ function showQuizCard() {
 
   const card = quizCards[currentQuizIndex];
   
-  // Mise à jour de l'image
   document.getElementById('quizCardImage').src = card.image;
   
-  // Réinitialiser l'input et le feedback
   const input = document.getElementById('quizInput');
   input.value = '';
   input.disabled = false;
-  input.focus(); // Focus pour pouvoir taper directement
+  input.focus();
   
   document.getElementById('verifyBtn').disabled = false;
   document.getElementById('quizFeedback').style.display = 'none';
   
-  // Reset du flag ENTER
-  if (window.resetQuizAnswered) window.resetQuizAnswered();
+  quizAnswered = false;
   
-  // Mise à jour de la progression
   updateQuizProgress();
   
-  // Mise à jour des boutons de navigation
   document.getElementById('prevCardBtn').disabled = currentQuizIndex === 0;
   document.getElementById('nextCardBtn').disabled = false;
 }
@@ -530,20 +503,19 @@ function verifyAnswer() {
   const card = quizCards[currentQuizIndex];
   const correctAnswer = `${card.artist} - ${card.title} - ${card.date}`;
   
-  // Vérification flexible
+  // 🔧 CORRECTION : Vérification STRICTE artiste + titre + date
   const artistMatch = userAnswer.includes(card.artist.toLowerCase());
   const titleMatch = userAnswer.includes(card.title.toLowerCase());
+  const dateMatch = userAnswer.includes(card.date.toLowerCase());
   
-  const isCorrect = artistMatch && titleMatch;
+  const isCorrect = artistMatch && titleMatch && dateMatch;
   
-  // Mise à jour des stats du quiz
   if (isCorrect) {
     quizStats.correct++;
   } else {
     quizStats.wrong++;
   }
 
-  // 📊 Mise à jour des stats de la carte
   if (!card.stats) {
     card.stats = { played: 0, correct: 0, wrong: 0, successRate: 0 };
   }
@@ -553,12 +525,10 @@ function verifyAnswer() {
   } else {
     card.stats.wrong++;
   }
-  // Calculer le taux de réussite
   card.stats.successRate = Math.round((card.stats.correct / card.stats.played) * 100);
   
   saveToLocalStorage();
   
-  // Afficher le feedback
   const feedback = document.getElementById('quizFeedback');
   feedback.style.display = 'block';
   feedback.className = `quiz-feedback ${isCorrect ? 'correct' : 'wrong'}`;
@@ -567,12 +537,10 @@ function verifyAnswer() {
   document.querySelector('.feedback-text').textContent = isCorrect ? 
     'Bravo ! Bonne réponse' : 'Pas tout à fait...';
   
-  // Afficher la réponse correcte avec l'erreur en gras
   const correctAnswerEl = document.getElementById('correctAnswer');
   if (isCorrect) {
     correctAnswerEl.textContent = correctAnswer;
   } else {
-    // Mettre en gras ce qui manque/est faux
     let displayAnswer = '';
     
     if (!artistMatch) {
@@ -587,9 +555,12 @@ function verifyAnswer() {
       displayAnswer += `${card.title} - `;
     }
     
-    displayAnswer += card.date;
+    if (!dateMatch) {
+      displayAnswer += `<strong>${card.date}</strong>`;
+    } else {
+      displayAnswer += card.date;
+    }
     
-    // Afficher aussi ce que l'utilisateur a écrit
     correctAnswerEl.innerHTML = `
       <div style="margin-bottom: 10px;">
         <strong>Votre réponse :</strong> <span style="color: var(--danger);">${escapeHtml(input.value)}</span>
@@ -600,11 +571,11 @@ function verifyAnswer() {
     `;
   }
   
-  // Désactiver l'input
   input.disabled = true;
   document.getElementById('verifyBtn').disabled = true;
   
-  // Remettre le focus sur l'input pour que ENTER fonctionne
+  quizAnswered = true;
+  
   setTimeout(() => input.focus(), 100);
   
   updateQuizProgress();
@@ -647,7 +618,6 @@ function showQuizResults() {
   document.getElementById('wrongCount').textContent = quizStats.wrong;
   document.getElementById('scorePercent').textContent = percentage + '%';
   
-  // 📈 Sauvegarder dans l'historique
   const historyEntry = {
     date: new Date().toISOString(),
     mode: quizMode,
@@ -659,7 +629,6 @@ function showQuizResults() {
   quizHistory.push(historyEntry);
   saveHistoryToLocalStorage();
   
-  // Désactiver le bouton suivant
   document.getElementById('nextCardBtn').disabled = true;
 }
 
@@ -699,7 +668,6 @@ function exportCards() {
   const link = document.createElement('a');
   link.href = url;
   
-  // Nom du fichier avec date
   const date = new Date().toISOString().split('T')[0];
   link.download = `quizart-backup-${date}.json`;
   
@@ -718,13 +686,11 @@ function importCards(event) {
     try {
       const imported = JSON.parse(e.target.result);
       
-      // Validation
       if (!imported.cards || !Array.isArray(imported.cards)) {
         showToast('❌ Fichier invalide', 'error');
         return;
       }
 
-      // Confirmation si des cartes existent déjà
       if (cards.length > 0) {
         const replace = await showConfirm(
           'Remplacer ou ajouter ?',
@@ -735,7 +701,6 @@ function importCards(event) {
           cards = imported.cards;
           showToast(`✅ ${imported.cards.length} carte(s) restaurée(s) !`, 'success');
         } else {
-          // Ajouter avec nouveaux IDs pour éviter les conflits
           const newCards = imported.cards.map(card => ({
             ...card,
             id: Date.now() + Math.random(),
@@ -749,7 +714,6 @@ function importCards(event) {
         showToast(`✅ ${imported.cards.length} carte(s) restaurée(s) !`, 'success');
       }
 
-      // Réinitialiser l'éditeur
       currentEditId = null;
       document.getElementById('cardEditor').style.display = 'none';
       
@@ -763,7 +727,7 @@ function importCards(event) {
   };
   
   reader.readAsText(file);
-  event.target.value = ''; // Reset input
+  event.target.value = '';
 }
 
 // ==================== HISTORY ====================
@@ -792,10 +756,8 @@ function renderHistory() {
   historyEmpty.style.display = 'none';
   historyChart.style.display = 'block';
 
-  // Dessiner le graphique
   drawProgressChart();
 
-  // Afficher la liste (inversée pour avoir les plus récents en premier)
   historyList.innerHTML = [...quizHistory].reverse().map((entry, index) => {
     const date = new Date(entry.date);
     const dateStr = date.toLocaleDateString('fr-FR', { 
@@ -836,28 +798,22 @@ function drawProgressChart() {
   const canvas = document.getElementById('progressChart');
   const ctx = canvas.getContext('2d');
   
-  // Configuration
   const width = canvas.width = canvas.offsetWidth;
   const height = canvas.height = 300;
   const padding = 40;
   const chartWidth = width - padding * 2;
   const chartHeight = height - padding * 2;
 
-  // Effacer
   ctx.clearRect(0, 0, width, height);
 
   if (quizHistory.length === 0) return;
 
-  // Prendre les 10 dernières sessions
   const data = quizHistory.slice(-10);
-  const maxPoints = Math.max(...data.map(d => d.percentage), 100);
   const step = chartWidth / (data.length - 1 || 1);
 
-  // Fond
   ctx.fillStyle = '#FAF7F2';
   ctx.fillRect(padding, padding, chartWidth, chartHeight);
 
-  // Grille
   ctx.strokeStyle = '#E8DCC8';
   ctx.lineWidth = 1;
   for (let i = 0; i <= 4; i++) {
@@ -867,14 +823,12 @@ function drawProgressChart() {
     ctx.lineTo(padding + chartWidth, y);
     ctx.stroke();
 
-    // Labels Y
     ctx.fillStyle = '#5A5A5A';
     ctx.font = '12px Georgia';
     ctx.textAlign = 'right';
     ctx.fillText((100 - i * 25) + '%', padding - 10, y + 4);
   }
 
-  // Ligne de progression
   ctx.strokeStyle = '#7C1D1D';
   ctx.lineWidth = 3;
   ctx.beginPath();
@@ -892,12 +846,10 @@ function drawProgressChart() {
 
   ctx.stroke();
 
-  // Points
   data.forEach((entry, index) => {
     const x = padding + step * index;
     const y = padding + chartHeight - (entry.percentage / 100) * chartHeight;
     
-    // Point
     ctx.fillStyle = '#D4AF37';
     ctx.beginPath();
     ctx.arc(x, y, 6, 0, Math.PI * 2);
@@ -907,14 +859,12 @@ function drawProgressChart() {
     ctx.lineWidth = 2;
     ctx.stroke();
 
-    // Label X (index)
     ctx.fillStyle = '#5A5A5A';
     ctx.font = '11px Georgia';
     ctx.textAlign = 'center';
     ctx.fillText('#' + (quizHistory.length - data.length + index + 1), x, height - 15);
   });
 
-  // Titre
   ctx.fillStyle = '#7C1D1D';
   ctx.font = 'bold 16px Georgia';
   ctx.textAlign = 'center';
@@ -949,7 +899,6 @@ function loadFromLocalStorage() {
     const saved = localStorage.getItem('flashcards');
     if (saved) {
       cards = JSON.parse(saved);
-      // S'assurer que toutes les cartes ont les nouvelles propriétés
       cards.forEach(card => {
         if (!card.stats) {
           card.stats = { played: 0, correct: 0, wrong: 0, successRate: 0 };
@@ -985,37 +934,5 @@ function loadHistoryFromLocalStorage() {
   }
 }
 
-// ==================== EXPORT / IMPORT ====================
-function exportData() {
-  const dataStr = JSON.stringify(cards, null, 2);
-  const dataBlob = new Blob([dataStr], { type: 'application/json' });
-  const url = URL.createObjectURL(dataBlob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = `flashcards-${Date.now()}.json`;
-  link.click();
-  URL.revokeObjectURL(url);
-  showToast('Export réussi !', 'success');
-}
-
-function importData(file) {
-  const reader = new FileReader();
-  reader.onload = (e) => {
-    try {
-      const imported = JSON.parse(e.target.result);
-      if (Array.isArray(imported)) {
-        cards = imported;
-        renderCardsList();
-        saveToLocalStorage();
-        showToast('Import réussi !', 'success');
-      }
-    } catch (err) {
-      showToast('Erreur d\'import', 'error');
-    }
-  };
-  reader.readAsText(file);
-}
-
-// Rendre les fonctions globales pour onclick
 window.selectCard = selectCard;
 window.closeHistoryModal = closeHistoryModal;

@@ -46,24 +46,33 @@ function setupEventListeners() {
   document.getElementById('verifyBtn').addEventListener('click', verifyAnswer);
   
   const quizInput = document.getElementById('quizInput');
+  
+  // Gestion globale de ENTER dans le quiz
+  let quizAnswered = false;
+  
   quizInput.addEventListener('keypress', (e) => {
     if (e.key === 'Enter') {
       e.preventDefault();
-      const verifyBtn = document.getElementById('verifyBtn');
-      const nextBtn = document.getElementById('nextCardBtn');
       
-      // Si le bouton vérifier est actif, on vérifie
-      if (!verifyBtn.disabled) {
+      if (!quizAnswered) {
+        // Première pression : vérifier
         verifyAnswer();
-      }
-      // Sinon si le feedback est affiché, on passe à la suivante
-      else if (document.getElementById('quizFeedback').style.display !== 'none') {
+        quizAnswered = true;
+      } else {
+        // Deuxième pression : carte suivante
         nextQuizCard();
+        quizAnswered = false;
       }
     }
   });
   
-  document.getElementById('nextCardBtn').addEventListener('click', nextQuizCard);
+  // Reset du flag quand on charge une nouvelle carte
+  window.resetQuizAnswered = () => { quizAnswered = false; };
+  
+  document.getElementById('nextCardBtn').addEventListener('click', () => {
+    nextQuizCard();
+    quizAnswered = false;
+  });
   document.getElementById('prevCardBtn').addEventListener('click', prevQuizCard);
   document.getElementById('restartQuizBtn').addEventListener('click', startQuiz);
   document.getElementById('viewHistoryBtn').addEventListener('click', showHistoryModal);
@@ -490,10 +499,16 @@ function showQuizCard() {
   document.getElementById('quizCardImage').src = card.image;
   
   // Réinitialiser l'input et le feedback
-  document.getElementById('quizInput').value = '';
-  document.getElementById('quizInput').disabled = false;
+  const input = document.getElementById('quizInput');
+  input.value = '';
+  input.disabled = false;
+  input.focus(); // Focus pour pouvoir taper directement
+  
   document.getElementById('verifyBtn').disabled = false;
   document.getElementById('quizFeedback').style.display = 'none';
+  
+  // Reset du flag ENTER
+  if (window.resetQuizAnswered) window.resetQuizAnswered();
   
   // Mise à jour de la progression
   updateQuizProgress();
@@ -588,6 +603,9 @@ function verifyAnswer() {
   // Désactiver l'input
   input.disabled = true;
   document.getElementById('verifyBtn').disabled = true;
+  
+  // Remettre le focus sur l'input pour que ENTER fonctionne
+  setTimeout(() => input.focus(), 100);
   
   updateQuizProgress();
 }

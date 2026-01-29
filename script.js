@@ -5,10 +5,13 @@ let currentEditId = null;
 let currentQuizIndex = 0;
 let quizCards = [];
 let quizStats = { correct: 0, wrong: 0 };
+let quizHistory = []; // Historique des sessions
+let quizMode = 'all'; // 'all' ou 'towork'
 
 // ==================== INITIALISATION ====================
 document.addEventListener('DOMContentLoaded', () => {
   loadFromLocalStorage();
+  loadHistoryFromLocalStorage();
   setupEventListeners();
   renderCardsList();
 });
@@ -29,6 +32,8 @@ function setupEventListeners() {
   document.getElementById('saveCardBtn').addEventListener('click', saveCard);
   document.getElementById('cancelEditBtn').addEventListener('click', cancelEdit);
   document.getElementById('deleteCardBtn').addEventListener('click', deleteCard);
+  document.getElementById('toggleToWorkBtn').addEventListener('click', toggleToWork);
+  document.getElementById('resetStatsBtn').addEventListener('click', resetCardStats);
 
   // Export / Import
   document.getElementById('exportBtn').addEventListener('click', exportCards);
@@ -45,6 +50,18 @@ function setupEventListeners() {
   document.getElementById('nextCardBtn').addEventListener('click', nextQuizCard);
   document.getElementById('prevCardBtn').addEventListener('click', prevQuizCard);
   document.getElementById('restartQuizBtn').addEventListener('click', startQuiz);
+  document.getElementById('viewHistoryBtn').addEventListener('click', showHistoryModal);
+  document.getElementById('clearHistoryBtn').addEventListener('click', clearHistory);
+
+  // Sélecteurs de mode quiz
+  document.querySelectorAll('.quiz-mode-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      document.querySelectorAll('.quiz-mode-btn').forEach(b => b.classList.remove('active'));
+      e.target.classList.add('active');
+      quizMode = e.target.dataset.mode;
+      startQuiz();
+    });
+  });
 }
 
 // ==================== MODE SWITCHING ====================
@@ -90,7 +107,15 @@ function createNewCard() {
     title: '',
     date: '',
     image: null,
-    order: cards.length
+    order: cards.length,
+    // Nouvelles propriétés
+    toWork: false,
+    stats: {
+      played: 0,
+      correct: 0,
+      wrong: 0,
+      successRate: 0
+    }
   };
   cards.push(newCard);
   renderCardsList();
@@ -103,6 +128,14 @@ function selectCard(cardId) {
   currentEditId = cardId;
   const card = cards.find(c => c.id === cardId);
   if (!card) return;
+
+  // S'assurer que card a les nouvelles propriétés
+  if (!card.stats) {
+    card.stats = { played: 0, correct: 0, wrong: 0, successRate: 0 };
+  }
+  if (card.toWork === undefined) {
+    card.toWork = false;
+  }
 
   // Mise à jour UI
   document.querySelectorAll('.card-item').forEach(item => {
@@ -126,6 +159,22 @@ function selectCard(cardId) {
   } else {
     preview.innerHTML = '';
   }
+
+  // Mettre à jour le bouton "À travailler"
+  const toWorkBtn = document.getElementById('toggleToWorkBtn');
+  if (card.toWork) {
+    toWorkBtn.textContent = '✅ À travailler';
+    toWorkBtn.classList.add('active');
+  } else {
+    toWorkBtn.textContent = '⭐ À travailler';
+    toWorkBtn.classList.remove('active');
+  }
+
+  // Afficher les statistiques
+  document.getElementById('statPlayed').textContent = card.stats.played;
+  document.getElementById('statCorrect').textContent = card.stats.correct;
+  document.getElementById('statWrong').textContent = card.stats.wrong;
+  document.getElementById('statRate').textContent = card.stats.successRate + '%';
 }
 
 function saveCard() {
@@ -179,6 +228,46 @@ function deleteCard() {
   renderCardsList();
   saveToLocalStorage();
   showToast('Carte supprimée', 'info');
+}
+
+function toggleToWork() {
+  if (!currentEditId) return;
+  const card = cards.find(c => c.id === currentEditId);
+  if (!card) return;
+
+  card.toWork = !card.toWork;
+  
+  const btn = document.getElementById('toggleToWorkBtn');
+  if (card.toWork) {
+    btn.textContent = '✅ À travailler';
+    btn.classList.add('active');
+    showToast('Carte ajoutée à "À travailler"', 'success');
+  } else {
+    btn.textContent = '⭐ À travailler';
+    btn.classList.remove('active');
+    showToast('Carte retirée de "À travailler"', 'info');
+  }
+
+  saveToLocalStorage();
+  renderCardsList();
+}
+
+function resetCardStats() {
+  if (!currentEditId) return;
+  if (!confirm('Réinitialiser les statistiques de cette carte ?')) return;
+
+  const card = cards.find(c => c.id === currentEditId);
+  if (!card) return;
+
+  card.stats = { played: 0, correct: 0, wrong: 0, successRate: 0 };
+  
+  document.getElementById('statPlayed').textContent = '0';
+  document.getElementById('statCorrect').textContent = '0';
+  document.getElementById('statWrong').textContent = '0';
+  document.getElementById('statRate').textContent = '0%';
+
+  saveToLocalStorage();
+  showToast('Statistiques réinitialisées', 'success');
 }
 
 function cancelEdit() {
@@ -266,6 +355,7 @@ function renderCardsList() {
     const displayArtist = card.artist || 'Artiste inconnu';
     const displayDate = card.date || '?';
     const thumbnail = card.image || 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="60" height="60"%3E%3Crect fill="%23e5e7eb" width="60" height="60"/%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" dy=".3em" fill="%239ca3af" font-size="24"%3E🎨%3C/text%3E%3C/svg%3E';
+    const toWorkBadge = card.toWork ? '<span class="towork-badge">⭐</span>' : '';
 
     return `
       <div class="card-item ${currentEditId === card.id ? 'active' : ''}" 
@@ -273,7 +363,7 @@ function renderCardsList() {
            onclick="selectCard(${card.id})">
         <img src="${thumbnail}" alt="${displayTitle}" class="card-item-thumb">
         <div class="card-item-info">
-          <div class="card-item-title">${escapeHtml(displayTitle)}</div>
+          <div class="card-item-title">${escapeHtml(displayTitle)} ${toWorkBadge}</div>
           <div class="card-item-meta">${escapeHtml(displayArtist)} - ${escapeHtml(displayDate)}</div>
         </div>
       </div>
@@ -283,10 +373,21 @@ function renderCardsList() {
 
 // ==================== QUIZ MODE ====================
 function startQuiz() {
-  // Filtrer les cartes complètes
-  quizCards = cards.filter(c => c.artist && c.title && c.date && c.image);
+  // Filtrer les cartes selon le mode
+  let availableCards = cards.filter(c => c.artist && c.title && c.date && c.image);
   
-  if (quizCards.length === 0) {
+  if (quizMode === 'towork') {
+    availableCards = availableCards.filter(c => c.toWork);
+    if (availableCards.length === 0) {
+      showToast('Aucune carte marquée "À travailler"', 'error');
+      document.getElementById('quizEmpty').style.display = 'block';
+      document.getElementById('quizCard').style.display = 'none';
+      document.getElementById('quizResult').style.display = 'none';
+      return;
+    }
+  }
+  
+  if (availableCards.length === 0) {
     document.getElementById('quizEmpty').style.display = 'block';
     document.getElementById('quizCard').style.display = 'none';
     document.getElementById('quizResult').style.display = 'none';
@@ -294,7 +395,7 @@ function startQuiz() {
   }
 
   // Mélanger les cartes
-  quizCards = shuffleArray([...quizCards]);
+  quizCards = shuffleArray([...availableCards]);
   
   // Réinitialiser
   currentQuizIndex = 0;
@@ -350,12 +451,27 @@ function verifyAnswer() {
   
   const isCorrect = artistMatch && titleMatch;
   
-  // Mise à jour des stats
+  // Mise à jour des stats du quiz
   if (isCorrect) {
     quizStats.correct++;
   } else {
     quizStats.wrong++;
   }
+
+  // 📊 Mise à jour des stats de la carte
+  if (!card.stats) {
+    card.stats = { played: 0, correct: 0, wrong: 0, successRate: 0 };
+  }
+  card.stats.played++;
+  if (isCorrect) {
+    card.stats.correct++;
+  } else {
+    card.stats.wrong++;
+  }
+  // Calculer le taux de réussite
+  card.stats.successRate = Math.round((card.stats.correct / card.stats.played) * 100);
+  
+  saveToLocalStorage();
   
   // Afficher le feedback
   const feedback = document.getElementById('quizFeedback');
@@ -410,6 +526,18 @@ function showQuizResults() {
   document.getElementById('correctCount').textContent = quizStats.correct;
   document.getElementById('wrongCount').textContent = quizStats.wrong;
   document.getElementById('scorePercent').textContent = percentage + '%';
+  
+  // 📈 Sauvegarder dans l'historique
+  const historyEntry = {
+    date: new Date().toISOString(),
+    mode: quizMode,
+    total: total,
+    correct: quizStats.correct,
+    wrong: quizStats.wrong,
+    percentage: percentage
+  };
+  quizHistory.push(historyEntry);
+  saveHistoryToLocalStorage();
   
   // Désactiver le bouton suivant
   document.getElementById('nextCardBtn').disabled = true;
@@ -520,6 +648,170 @@ function importCards(event) {
   event.target.value = ''; // Reset input
 }
 
+// ==================== HISTORY ====================
+function showHistoryModal() {
+  const modal = document.getElementById('historyModal');
+  modal.style.display = 'flex';
+  renderHistory();
+}
+
+function closeHistoryModal() {
+  document.getElementById('historyModal').style.display = 'none';
+}
+
+function renderHistory() {
+  const historyList = document.getElementById('historyList');
+  const historyChart = document.getElementById('historyChart');
+  const historyEmpty = document.querySelector('.history-empty');
+
+  if (quizHistory.length === 0) {
+    historyEmpty.style.display = 'block';
+    historyChart.style.display = 'none';
+    historyList.innerHTML = '';
+    return;
+  }
+
+  historyEmpty.style.display = 'none';
+  historyChart.style.display = 'block';
+
+  // Dessiner le graphique
+  drawProgressChart();
+
+  // Afficher la liste (inversée pour avoir les plus récents en premier)
+  historyList.innerHTML = [...quizHistory].reverse().map((entry, index) => {
+    const date = new Date(entry.date);
+    const dateStr = date.toLocaleDateString('fr-FR', { 
+      day: '2-digit', 
+      month: '2-digit', 
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+    const modeLabel = entry.mode === 'all' ? '📚 Toutes les cartes' : '⭐ À travailler';
+
+    return `
+      <div class="history-item">
+        <div class="history-header">
+          <span class="history-date">${dateStr}</span>
+          <span class="history-mode">${modeLabel}</span>
+        </div>
+        <div class="history-stats">
+          <div class="history-stat">
+            <span class="history-stat-value">${entry.total}</span>
+            <span class="history-stat-label">Questions</span>
+          </div>
+          <div class="history-stat">
+            <span class="history-stat-value" style="color: var(--success)">${entry.correct}</span>
+            <span class="history-stat-label">Réussies</span>
+          </div>
+          <div class="history-stat">
+            <span class="history-stat-value" style="color: var(--gold)">${entry.percentage}%</span>
+            <span class="history-stat-label">Score</span>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function drawProgressChart() {
+  const canvas = document.getElementById('progressChart');
+  const ctx = canvas.getContext('2d');
+  
+  // Configuration
+  const width = canvas.width = canvas.offsetWidth;
+  const height = canvas.height = 300;
+  const padding = 40;
+  const chartWidth = width - padding * 2;
+  const chartHeight = height - padding * 2;
+
+  // Effacer
+  ctx.clearRect(0, 0, width, height);
+
+  if (quizHistory.length === 0) return;
+
+  // Prendre les 10 dernières sessions
+  const data = quizHistory.slice(-10);
+  const maxPoints = Math.max(...data.map(d => d.percentage), 100);
+  const step = chartWidth / (data.length - 1 || 1);
+
+  // Fond
+  ctx.fillStyle = '#FAF7F2';
+  ctx.fillRect(padding, padding, chartWidth, chartHeight);
+
+  // Grille
+  ctx.strokeStyle = '#E8DCC8';
+  ctx.lineWidth = 1;
+  for (let i = 0; i <= 4; i++) {
+    const y = padding + (chartHeight / 4) * i;
+    ctx.beginPath();
+    ctx.moveTo(padding, y);
+    ctx.lineTo(padding + chartWidth, y);
+    ctx.stroke();
+
+    // Labels Y
+    ctx.fillStyle = '#5A5A5A';
+    ctx.font = '12px Georgia';
+    ctx.textAlign = 'right';
+    ctx.fillText((100 - i * 25) + '%', padding - 10, y + 4);
+  }
+
+  // Ligne de progression
+  ctx.strokeStyle = '#7C1D1D';
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+
+  data.forEach((entry, index) => {
+    const x = padding + step * index;
+    const y = padding + chartHeight - (entry.percentage / 100) * chartHeight;
+    
+    if (index === 0) {
+      ctx.moveTo(x, y);
+    } else {
+      ctx.lineTo(x, y);
+    }
+  });
+
+  ctx.stroke();
+
+  // Points
+  data.forEach((entry, index) => {
+    const x = padding + step * index;
+    const y = padding + chartHeight - (entry.percentage / 100) * chartHeight;
+    
+    // Point
+    ctx.fillStyle = '#D4AF37';
+    ctx.beginPath();
+    ctx.arc(x, y, 6, 0, Math.PI * 2);
+    ctx.fill();
+    
+    ctx.strokeStyle = '#7C1D1D';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // Label X (index)
+    ctx.fillStyle = '#5A5A5A';
+    ctx.font = '11px Georgia';
+    ctx.textAlign = 'center';
+    ctx.fillText('#' + (quizHistory.length - data.length + index + 1), x, height - 15);
+  });
+
+  // Titre
+  ctx.fillStyle = '#7C1D1D';
+  ctx.font = 'bold 16px Georgia';
+  ctx.textAlign = 'center';
+  ctx.fillText('📈 Évolution de vos performances', width / 2, 25);
+}
+
+function clearHistory() {
+  if (!confirm('Voulez-vous vraiment effacer tout l\'historique ?')) return;
+  
+  quizHistory = [];
+  saveHistoryToLocalStorage();
+  renderHistory();
+  showToast('Historique effacé', 'info');
+}
+
 // ==================== STORAGE ====================
 function saveToLocalStorage() {
   try {
@@ -534,10 +826,39 @@ function loadFromLocalStorage() {
     const saved = localStorage.getItem('flashcards');
     if (saved) {
       cards = JSON.parse(saved);
+      // S'assurer que toutes les cartes ont les nouvelles propriétés
+      cards.forEach(card => {
+        if (!card.stats) {
+          card.stats = { played: 0, correct: 0, wrong: 0, successRate: 0 };
+        }
+        if (card.toWork === undefined) {
+          card.toWork = false;
+        }
+      });
     }
   } catch (e) {
     console.error('Erreur de chargement:', e);
     cards = [];
+  }
+}
+
+function saveHistoryToLocalStorage() {
+  try {
+    localStorage.setItem('quizHistory', JSON.stringify(quizHistory));
+  } catch (e) {
+    console.error('Erreur sauvegarde historique:', e);
+  }
+}
+
+function loadHistoryFromLocalStorage() {
+  try {
+    const saved = localStorage.getItem('quizHistory');
+    if (saved) {
+      quizHistory = JSON.parse(saved);
+    }
+  } catch (e) {
+    console.error('Erreur chargement historique:', e);
+    quizHistory = [];
   }
 }
 
@@ -574,3 +895,4 @@ function importData(file) {
 
 // Rendre les fonctions globales pour onclick
 window.selectCard = selectCard;
+window.closeHistoryModal = closeHistoryModal;

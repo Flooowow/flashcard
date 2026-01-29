@@ -60,7 +60,34 @@
         <div id="cardEditor" class="card-editor" style="display: none;">
           <div class="editor-header">
             <h3>Édition de la carte</h3>
-            <button id="deleteCardBtn" class="btn btn-danger">🗑️ Supprimer</button>
+            <div class="header-actions">
+              <button id="toggleToWorkBtn" class="btn btn-warning">⭐ À travailler</button>
+              <button id="deleteCardBtn" class="btn btn-danger">🗑️ Supprimer</button>
+            </div>
+          </div>
+
+          <!-- Statistiques de la carte -->
+          <div id="cardStats" class="card-stats">
+            <h4>📊 Statistiques</h4>
+            <div class="stats-grid">
+              <div class="stat-box">
+                <span class="stat-number" id="statPlayed">0</span>
+                <span class="stat-label">Fois jouée</span>
+              </div>
+              <div class="stat-box">
+                <span class="stat-number stat-success" id="statCorrect">0</span>
+                <span class="stat-label">Réussites</span>
+              </div>
+              <div class="stat-box">
+                <span class="stat-number stat-error" id="statWrong">0</span>
+                <span class="stat-label">Erreurs</span>
+              </div>
+              <div class="stat-box">
+                <span class="stat-number stat-rate" id="statRate">0%</span>
+                <span class="stat-label">Taux de réussite</span>
+              </div>
+            </div>
+            <button id="resetStatsBtn" class="btn btn-secondary btn-small">🔄 Réinitialiser les stats</button>
           </div>
 
           <div class="form-group">
@@ -100,7 +127,16 @@
     <div class="quiz-container">
       <!-- En-tête du quiz -->
       <div class="quiz-header">
-        <h2 id="quizTitle">TESTEZ VOS CONNAISSANCES</h2>
+        <div class="quiz-header-content">
+          <h2 id="quizTitle">TESTEZ VOS CONNAISSANCES</h2>
+          
+          <!-- Sélecteur de mode -->
+          <div class="quiz-mode-selector">
+            <button class="quiz-mode-btn active" data-mode="all">📚 Toutes les cartes</button>
+            <button class="quiz-mode-btn" data-mode="towork">⭐ À travailler</button>
+          </div>
+        </div>
+        
         <div class="quiz-progress">
           <span id="progressText">1 / 55</span>
           <div class="progress-bar">
@@ -159,7 +195,10 @@
               <span class="stat-label">Score</span>
             </div>
           </div>
-          <button id="restartQuizBtn" class="btn btn-primary">🔄 Recommencer</button>
+          <div class="result-actions">
+            <button id="restartQuizBtn" class="btn btn-primary">🔄 Recommencer</button>
+            <button id="viewHistoryBtn" class="btn btn-secondary">📈 Voir l'historique</button>
+          </div>
         </div>
       </div>
 
@@ -173,6 +212,35 @@
 
   <!-- Toast notifications -->
   <div id="toastContainer" class="toast-container"></div>
+
+  <!-- Modal Historique -->
+  <div id="historyModal" class="modal">
+    <div class="modal-content modal-large">
+      <div class="modal-header">
+        <h3>📈 Historique des quiz</h3>
+        <button class="modal-close" onclick="closeHistoryModal()">✕</button>
+      </div>
+      
+      <div id="historyContent" class="history-content">
+        <div class="history-empty">
+          <div class="empty-icon">📊</div>
+          <p>Aucun historique pour le moment</p>
+          <p class="small">Complétez un quiz pour voir vos statistiques</p>
+        </div>
+        
+        <div id="historyChart" style="display: none;">
+          <canvas id="progressChart" width="600" height="300"></canvas>
+        </div>
+        
+        <div id="historyList" class="history-list"></div>
+      </div>
+      
+      <div class="modal-footer">
+        <button id="clearHistoryBtn" class="btn btn-danger">🗑️ Effacer l'historique</button>
+        <button class="btn btn-secondary" onclick="closeHistoryModal()">Fermer</button>
+      </div>
+    </div>
+  </div>
 
   <script src="script.js"></script>
 </body>

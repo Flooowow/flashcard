@@ -47,25 +47,28 @@ function setupEventListeners() {
   document.getElementById('verifyBtn').addEventListener('click', verifyAnswer);
   document.getElementById('nextCardBtn').addEventListener('click', () => {
     nextQuizCard();
-    quizAnswered = false;
   });
   
-  const quizInput = document.getElementById('quizInput');
-  
-  // 🔧 GESTION GLOBALE DE LA TOUCHE ENTRÉE (avec délégation au document)
-  document.addEventListener('keydown', (e) => {
-    // Vérifier qu'on est en mode quiz et que l'input est focusé ou que la carte quiz est visible
+  // 🔧 FIX DÉFINITIF : Gestion de la touche Entrée sur le document entier
+  document.addEventListener('keydown', function(e) {
+    // Ne gérer Entrée que si on est en mode quiz
     const quizCard = document.getElementById('quizCard');
-    const isQuizVisible = quizCard && quizCard.style.display !== 'none';
+    const quizMode = document.getElementById('quizMode');
     
-    if (e.key === 'Enter' && isQuizVisible) {
+    if (!quizMode.classList.contains('active')) return;
+    if (!quizCard || quizCard.style.display === 'none') return;
+    
+    if (e.key === 'Enter') {
       e.preventDefault();
+      e.stopPropagation();
+      
+      console.log('ENTER pressée - quizAnswered:', quizAnswered);
       
       if (!quizAnswered) {
-        // Première pression : vérifier la réponse
+        console.log('→ Vérification de la réponse');
         verifyAnswer();
       } else {
-        // Deuxième pression : passer à la carte suivante
+        console.log('→ Passage à la carte suivante');
         nextQuizCard();
       }
     }
@@ -609,9 +612,9 @@ function verifyAnswer() {
   input.disabled = true;
   document.getElementById('verifyBtn').disabled = true;
   
+  // 🔧 IMPORTANT : Marquer qu'on a répondu APRÈS tout le reste
   quizAnswered = true;
-  
-  setTimeout(() => input.focus(), 100);
+  console.log('verifyAnswer terminé - quizAnswered set to TRUE');
   
   updateQuizProgress();
 }
@@ -619,6 +622,7 @@ function verifyAnswer() {
 function nextQuizCard() {
   if (currentQuizIndex < quizCards.length - 1) {
     currentQuizIndex++;
+    quizAnswered = false; // 🔧 Reset important !
     showQuizCard();
   } else {
     showQuizResults();

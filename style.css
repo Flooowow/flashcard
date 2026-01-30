@@ -781,6 +781,32 @@ header h1 {
   gap: 5px;
 }
 
+.note-input {
+  width: 100%;
+  padding: 12px;
+  border: 2px solid var(--gold);
+  border-radius: 8px;
+  font-size: 14px;
+  background: #FFFEF8;
+  color: var(--anthracite);
+  font-family: 'Georgia', serif;
+  resize: vertical;
+  min-height: 80px;
+  transition: all 0.3s;
+}
+
+.note-input:focus {
+  outline: none;
+  border-color: var(--burgundy);
+  box-shadow: 0 0 0 3px rgba(124, 29, 29, 0.1);
+  background: white;
+}
+
+.note-input::placeholder {
+  color: #A0967A;
+  font-style: italic;
+}
+
 .note-content {
   font-size: 14px;
   color: var(--anthracite);

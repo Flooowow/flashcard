@@ -46,6 +46,7 @@ function setupEventListeners() {
 
   // Mode quiz
   document.getElementById('verifyBtn').addEventListener('click', verifyAnswer);
+  document.getElementById('saveNoteBtn').addEventListener('click', saveNoteFromQuiz);
   document.getElementById('nextCardBtn').addEventListener('click', () => {
     nextQuizCard();
   });
@@ -634,15 +635,9 @@ function verifyAnswer() {
     `;
   }
   
-  // 📝 Afficher la note si elle existe
-  const noteDisplay = document.getElementById('noteDisplay');
-  const noteContent = document.getElementById('noteContent');
-  if (card.note && card.note.trim() !== '') {
-    noteContent.textContent = card.note;
-    noteDisplay.style.display = 'block';
-  } else {
-    noteDisplay.style.display = 'none';
-  }
+  // 📝 Afficher le champ note modifiable avec la note existante
+  const noteInput = document.getElementById('noteInput');
+  noteInput.value = card.note || '';
   
   input.disabled = true;
   document.getElementById('verifyBtn').disabled = true;
@@ -659,6 +654,21 @@ function nextQuizCard() {
     showQuizCard();
   } else {
     showQuizResults();
+  }
+}
+
+function saveNoteFromQuiz() {
+  const card = quizCards[currentQuizIndex];
+  const noteInput = document.getElementById('noteInput');
+  const noteValue = noteInput.value.trim();
+  
+  // Trouver la carte dans le tableau principal et mettre à jour la note
+  const originalCard = cards.find(c => c.id === card.id);
+  if (originalCard) {
+    originalCard.note = noteValue;
+    card.note = noteValue; // Mettre à jour aussi dans quizCards
+    saveToLocalStorage();
+    showToast('📝 Note sauvegardée !', 'success');
   }
 }
 

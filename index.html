@@ -139,6 +139,12 @@
             <input type="text" id="cardTitle" placeholder="Ex: Le Caravage à Emmaüs" required>
           </div>
 
+          <div class="form-group">
+            <label for="cardNote">📝 Note / Moyen mnémotechnique</label>
+            <textarea id="cardNote" placeholder="Ex: Peint pendant son exil à Naples - Clair-obscur caractéristique" rows="3"></textarea>
+            <small style="color: var(--gray-700); font-size: 12px;">Cette note s'affichera après votre réponse pour vous aider à mémoriser</small>
+          </div>
+
           <div class="editor-actions">
             <button id="saveCardBtn" class="btn btn-success">💾 Enregistrer</button>
             <button id="cancelEditBtn" class="btn btn-secondary">Annuler</button>
@@ -200,6 +206,10 @@
               <span class="feedback-text"></span>
             </div>
             <div class="correct-answer" id="correctAnswer"></div>
+            <div id="noteDisplay" class="note-display" style="display: none;">
+              <div class="note-header">📝 Note</div>
+              <div class="note-content" id="noteContent"></div>
+            </div>
           </div>
         </div>
 

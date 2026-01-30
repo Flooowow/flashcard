@@ -173,6 +173,7 @@ function createNewCard() {
     title: '',
     date: '',
     image: null,
+    note: '',
     order: cards.length,
     toWork: false,
     stats: {
@@ -212,6 +213,7 @@ function selectCard(cardId) {
   document.getElementById('cardArtist').value = card.artist || '';
   document.getElementById('cardTitle').value = card.title || '';
   document.getElementById('cardDate').value = card.date || '';
+  document.getElementById('cardNote').value = card.note || '';
 
   const preview = document.getElementById('imagePreview');
   if (card.image) {
@@ -242,6 +244,7 @@ function saveCard() {
   const artist = document.getElementById('cardArtist').value.trim();
   const title = document.getElementById('cardTitle').value.trim();
   const date = document.getElementById('cardDate').value.trim();
+  const note = document.getElementById('cardNote').value.trim();
 
   if (!artist || !title || !date) {
     showToast('Veuillez remplir tous les champs obligatoires', 'error');
@@ -256,6 +259,7 @@ function saveCard() {
   card.artist = artist;
   card.title = title;
   card.date = date;
+  card.note = note;
 
   renderCardsList();
   saveToLocalStorage();
@@ -628,6 +632,16 @@ function verifyAnswer() {
         <strong>Réponse correcte :</strong><br>${displayAnswer}
       </div>
     `;
+  }
+  
+  // 📝 Afficher la note si elle existe
+  const noteDisplay = document.getElementById('noteDisplay');
+  const noteContent = document.getElementById('noteContent');
+  if (card.note && card.note.trim() !== '') {
+    noteContent.textContent = card.note;
+    noteDisplay.style.display = 'block';
+  } else {
+    noteDisplay.style.display = 'none';
   }
   
   input.disabled = true;
@@ -1109,6 +1123,9 @@ function loadFromLocalStorage() {
         }
         if (card.toWork === undefined) {
           card.toWork = false;
+        }
+        if (card.note === undefined) {
+          card.note = '';
         }
       });
     }

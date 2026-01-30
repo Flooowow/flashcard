@@ -357,7 +357,8 @@ header h1 {
 }
 
 .form-group input[type="text"],
-.form-group input[type="file"] {
+.form-group input[type="file"],
+.form-group textarea {
   width: 100%;
   padding: 12px;
   border: 2px solid var(--beige);
@@ -367,9 +368,11 @@ header h1 {
   background: var(--light-cream);
   color: var(--anthracite);
   font-family: 'Georgia', serif;
+  resize: vertical;
 }
 
-.form-group input:focus {
+.form-group input:focus,
+.form-group textarea:focus {
   outline: none;
   border-color: var(--burgundy);
   box-shadow: 0 0 0 3px rgba(124, 29, 29, 0.1);
@@ -756,6 +759,34 @@ header h1 {
   color: var(--burgundy);
   display: inline-block;
   margin-right: 5px;
+}
+
+/* Note Display */
+.note-display {
+  margin-top: 20px;
+  padding: 15px;
+  background: linear-gradient(135deg, #FFF9E6 0%, #FFF5D6 100%);
+  border: 2px solid var(--gold);
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(212, 175, 55, 0.2);
+}
+
+.note-header {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--burgundy);
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.note-content {
+  font-size: 14px;
+  color: var(--anthracite);
+  line-height: 1.6;
+  font-style: italic;
+  white-space: pre-wrap;
 }
 
 /* Quiz Result */

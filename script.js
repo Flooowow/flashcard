@@ -175,6 +175,7 @@ function createNewCard() {
     date: '',
     image: null,
     note: '',
+    hasError: false,
     order: cards.length,
     toWork: false,
     stats: {
@@ -430,6 +431,7 @@ function renderCardsList() {
     const displayDate = card.date || '?';
     const thumbnail = card.image || 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="60" height="60"%3E%3Crect fill="%23e5e7eb" width="60" height="60"/%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" dy=".3em" fill="%239ca3af" font-size="24"%3E🎨%3C/text%3E%3C/svg%3E';
     const toWorkBadge = card.toWork ? '<span class="towork-badge">⭐</span>' : '';
+    const errorBadge = card.hasError ? '<span class="error-badge" title="Erreur signalée">⚠️</span>' : '';
 
     return `
       <div class="card-item ${currentEditId === card.id ? 'active' : ''}" 
@@ -440,6 +442,7 @@ function renderCardsList() {
           <div class="card-item-title">${escapeHtml(displayTitle)} ${toWorkBadge}</div>
           <div class="card-item-meta">${escapeHtml(displayArtist)} - ${escapeHtml(displayDate)}</div>
         </div>
+        ${errorBadge}
       </div>
     `;
   }).join('');
@@ -639,6 +642,10 @@ function verifyAnswer() {
   const noteInput = document.getElementById('noteInput');
   noteInput.value = card.note || '';
   
+  // ⚠️ Afficher l'état de la checkbox hasError
+  const cardErrorCheckbox = document.getElementById('cardErrorCheckbox');
+  cardErrorCheckbox.checked = card.hasError || false;
+  
   input.disabled = true;
   document.getElementById('verifyBtn').disabled = true;
   
@@ -661,14 +668,26 @@ function saveNoteFromQuiz() {
   const card = quizCards[currentQuizIndex];
   const noteInput = document.getElementById('noteInput');
   const noteValue = noteInput.value.trim();
+  const cardErrorCheckbox = document.getElementById('cardErrorCheckbox');
+  const hasError = cardErrorCheckbox.checked;
   
-  // Trouver la carte dans le tableau principal et mettre à jour la note
+  // Trouver la carte dans le tableau principal et mettre à jour
   const originalCard = cards.find(c => c.id === card.id);
   if (originalCard) {
     originalCard.note = noteValue;
-    card.note = noteValue; // Mettre à jour aussi dans quizCards
+    originalCard.hasError = hasError;
+    card.note = noteValue;
+    card.hasError = hasError;
     saveToLocalStorage();
-    showToast('📝 Note sauvegardée !', 'success');
+    
+    if (hasError) {
+      showToast('📝 Note sauvegardée + Erreur signalée ⚠️', 'success');
+    } else {
+      showToast('📝 Note sauvegardée !', 'success');
+    }
+    
+    // Mettre à jour l'affichage dans la liste si on est en mode édition
+    renderCardsList();
   }
 }
 
@@ -1136,6 +1155,9 @@ function loadFromLocalStorage() {
         }
         if (card.note === undefined) {
           card.note = '';
+        }
+        if (card.hasError === undefined) {
+          card.hasError = false;
         }
       });
     }

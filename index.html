@@ -47,6 +47,7 @@
                 <span class="stat-mini-label">Taux global</span>
               </div>
             </div>
+            <button id="viewSessionStatsBtn" class="btn btn-secondary btn-small" style="margin-top: 10px; width: 100%;">📊 Voir les sessions</button>
           </div>
           
           <div class="sidebar-controls">
@@ -219,6 +220,14 @@
               <span class="stat-value" id="scorePercent">0%</span>
               <span class="stat-label">Score</span>
             </div>
+            <div class="stat">
+              <span class="stat-value" id="pointsScore">0/0</span>
+              <span class="stat-label">Points</span>
+            </div>
+            <div class="stat">
+              <span class="stat-value" id="pointsPercent">0%</span>
+              <span class="stat-label">Taux points</span>
+            </div>
           </div>
           <div class="result-actions">
             <button id="restartQuizBtn" class="btn btn-primary">🔄 Recommencer</button>
@@ -263,6 +272,26 @@
       <div class="modal-footer">
         <button id="clearHistoryBtn" class="btn btn-danger">🗑️ Effacer l'historique</button>
         <button class="btn btn-secondary" onclick="closeHistoryModal()">Fermer</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Statistiques de Session -->
+  <div id="sessionStatsModal" class="modal">
+    <div class="modal-content modal-large">
+      <div class="modal-header">
+        <h3>📊 Statistiques par session</h3>
+        <button class="modal-close" id="closeSessionStatsBtn">✕</button>
+      </div>
+      
+      <div class="session-stats-content">
+        <div id="sessionStatsList" class="session-stats-list">
+          <!-- Les statistiques seront ajoutées ici -->
+        </div>
+      </div>
+      
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeSessionStatsModal()">Fermer</button>
       </div>
     </div>
   </div>

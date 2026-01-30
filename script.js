@@ -4,10 +4,11 @@ let currentCardId = null;
 let currentEditId = null;
 let currentQuizIndex = 0;
 let quizCards = [];
-let quizStats = { correct: 0, wrong: 0 };
+let quizStats = { correct: 0, wrong: 0, artistPoints: 0, titlePoints: 0, datePoints: 0, totalPoints: 0, maxPoints: 0 };
 let quizHistory = []; // Historique des sessions
 let quizMode = 'all'; // 'all' ou 'towork'
-let quizAnswered = false; // 🔧 NOUVEAU : Flag pour savoir si on a déjà répondu
+let quizAnswered = false;
+let currentSessionDetails = []; // Détails de la session en cours
 
 // ==================== INITIALISATION ====================
 document.addEventListener('DOMContentLoaded', () => {
@@ -49,9 +50,7 @@ function setupEventListeners() {
     nextQuizCard();
   });
   
-  // 🔧 FIX DÉFINITIF : Gestion de la touche Entrée sur le document entier
   document.addEventListener('keydown', function(e) {
-    // Ne gérer Entrée que si on est en mode quiz
     const quizCard = document.getElementById('quizCard');
     const quizMode = document.getElementById('quizMode');
     
@@ -62,13 +61,9 @@ function setupEventListeners() {
       e.preventDefault();
       e.stopPropagation();
       
-      console.log('ENTER pressée - quizAnswered:', quizAnswered);
-      
       if (!quizAnswered) {
-        console.log('→ Vérification de la réponse');
         verifyAnswer();
       } else {
-        console.log('→ Passage à la carte suivante');
         nextQuizCard();
       }
     }
@@ -77,6 +72,10 @@ function setupEventListeners() {
   document.getElementById('restartQuizBtn').addEventListener('click', startQuiz);
   document.getElementById('viewHistoryBtn').addEventListener('click', showHistoryModal);
   document.getElementById('clearHistoryBtn').addEventListener('click', clearHistory);
+  
+  // 🆕 Bouton pour voir les statistiques de session
+  document.getElementById('viewSessionStatsBtn').addEventListener('click', showSessionStatsModal);
+  document.getElementById('closeSessionStatsBtn').addEventListener('click', closeSessionStatsModal);
 
   // Sélecteurs de mode quiz
   document.querySelectorAll('.quiz-mode-btn').forEach(btn => {
@@ -151,7 +150,6 @@ function showConfirm(title, message) {
     yesBtn.addEventListener('click', handleYes);
     noBtn.addEventListener('click', handleNo);
     
-    // ESC pour annuler
     const handleEscape = (e) => {
       if (e.key === 'Escape') {
         handleNo();
@@ -441,16 +439,13 @@ function renderCardsList() {
     `;
   }).join('');
   
-  // 📊 Mettre à jour les stats globales
   updateGlobalStats();
 }
 
-// 📊 NOUVELLE FONCTION : Calculer et afficher les statistiques globales
 function updateGlobalStats() {
   const totalCards = cards.length;
   const toWorkCards = cards.filter(c => c.toWork).length;
   
-  // Calculer le taux de réussite global
   let totalPlayed = 0;
   let totalCorrect = 0;
   
@@ -463,7 +458,6 @@ function updateGlobalStats() {
   
   const globalSuccessRate = totalPlayed > 0 ? Math.round((totalCorrect / totalPlayed) * 100) : 0;
   
-  // Mettre à jour l'affichage
   document.getElementById('globalTotalCards').textContent = totalCards;
   document.getElementById('globalToWork').textContent = toWorkCards;
   document.getElementById('globalSuccessRate').textContent = globalSuccessRate + '%';
@@ -493,8 +487,9 @@ function startQuiz() {
 
   quizCards = shuffleArray([...availableCards]);
   currentQuizIndex = 0;
-  quizStats = { correct: 0, wrong: 0 };
+  quizStats = { correct: 0, wrong: 0, artistPoints: 0, titlePoints: 0, datePoints: 0, totalPoints: 0, maxPoints: 0 };
   quizAnswered = false;
+  currentSessionDetails = [];
   
   document.getElementById('quizEmpty').style.display = 'none';
   document.getElementById('quizCard').style.display = 'block';
@@ -541,18 +536,44 @@ function verifyAnswer() {
   const card = quizCards[currentQuizIndex];
   const correctAnswer = `${card.artist} - ${card.title} - ${card.date}`;
   
-  // 🔧 CORRECTION : Vérification STRICTE artiste + titre + date
+  // 🆕 Vérification détaillée avec points
   const artistMatch = userAnswer.includes(card.artist.toLowerCase());
   const titleMatch = userAnswer.includes(card.title.toLowerCase());
   const dateMatch = userAnswer.includes(card.date.toLowerCase());
   
+  let points = 0;
+  if (artistMatch) points++;
+  if (titleMatch) points++;
+  if (dateMatch) points++;
+  
   const isCorrect = artistMatch && titleMatch && dateMatch;
+  
+  // 🆕 Mise à jour des points détaillés
+  if (artistMatch) quizStats.artistPoints++;
+  if (titleMatch) quizStats.titlePoints++;
+  if (dateMatch) quizStats.datePoints++;
+  quizStats.totalPoints += points;
+  quizStats.maxPoints += 3;
   
   if (isCorrect) {
     quizStats.correct++;
   } else {
     quizStats.wrong++;
   }
+  
+  // 🆕 Enregistrer les détails de la réponse
+  currentSessionDetails.push({
+    cardId: card.id,
+    artist: card.artist,
+    title: card.title,
+    date: card.date,
+    userAnswer: input.value,
+    artistMatch,
+    titleMatch,
+    dateMatch,
+    points,
+    isCorrect
+  });
 
   if (!card.stats) {
     card.stats = { played: 0, correct: 0, wrong: 0, successRate: 0 };
@@ -573,7 +594,7 @@ function verifyAnswer() {
   
   document.querySelector('.feedback-icon').textContent = isCorrect ? '✅' : '❌';
   document.querySelector('.feedback-text').textContent = isCorrect ? 
-    'Bravo ! Bonne réponse' : 'Pas tout à fait...';
+    `Bravo ! Bonne réponse (${points}/3 points)` : `Pas tout à fait... (${points}/3 points)`;
   
   const correctAnswerEl = document.getElementById('correctAnswer');
   if (isCorrect) {
@@ -582,29 +603,29 @@ function verifyAnswer() {
     let displayAnswer = '';
     
     if (!artistMatch) {
-      displayAnswer += `<strong>${card.artist}</strong> - `;
+      displayAnswer += `<strong style="color: var(--danger);">${card.artist}</strong> - `;
     } else {
-      displayAnswer += `${card.artist} - `;
+      displayAnswer += `<strong style="color: var(--success);">✓ ${card.artist}</strong> - `;
     }
     
     if (!titleMatch) {
-      displayAnswer += `<strong>${card.title}</strong> - `;
+      displayAnswer += `<strong style="color: var(--danger);">${card.title}</strong> - `;
     } else {
-      displayAnswer += `${card.title} - `;
+      displayAnswer += `<strong style="color: var(--success);">✓ ${card.title}</strong> - `;
     }
     
     if (!dateMatch) {
-      displayAnswer += `<strong>${card.date}</strong>`;
+      displayAnswer += `<strong style="color: var(--danger);">${card.date}</strong>`;
     } else {
-      displayAnswer += card.date;
+      displayAnswer += `<strong style="color: var(--success);">✓ ${card.date}</strong>`;
     }
     
     correctAnswerEl.innerHTML = `
       <div style="margin-bottom: 10px;">
-        <strong>Votre réponse :</strong> <span style="color: var(--danger);">${escapeHtml(input.value)}</span>
+        <strong>Votre réponse :</strong> <span style="color: var(--anthracite);">${escapeHtml(input.value)}</span>
       </div>
       <div>
-        <strong>Réponse correcte :</strong> ${displayAnswer}
+        <strong>Réponse correcte :</strong><br>${displayAnswer}
       </div>
     `;
   }
@@ -612,9 +633,7 @@ function verifyAnswer() {
   input.disabled = true;
   document.getElementById('verifyBtn').disabled = true;
   
-  // 🔧 IMPORTANT : Marquer qu'on a répondu APRÈS tout le reste
   quizAnswered = true;
-  console.log('verifyAnswer terminé - quizAnswered set to TRUE');
   
   updateQuizProgress();
 }
@@ -622,7 +641,7 @@ function verifyAnswer() {
 function nextQuizCard() {
   if (currentQuizIndex < quizCards.length - 1) {
     currentQuizIndex++;
-    quizAnswered = false; // 🔧 Reset important !
+    quizAnswered = false;
     showQuizCard();
   } else {
     showQuizResults();
@@ -652,23 +671,169 @@ function showQuizResults() {
   
   const total = quizStats.correct + quizStats.wrong;
   const percentage = total > 0 ? Math.round((quizStats.correct / total) * 100) : 0;
+  const pointsPercentage = quizStats.maxPoints > 0 ? Math.round((quizStats.totalPoints / quizStats.maxPoints) * 100) : 0;
   
   document.getElementById('correctCount').textContent = quizStats.correct;
   document.getElementById('wrongCount').textContent = quizStats.wrong;
   document.getElementById('scorePercent').textContent = percentage + '%';
+  document.getElementById('pointsScore').textContent = `${quizStats.totalPoints}/${quizStats.maxPoints}`;
+  document.getElementById('pointsPercent').textContent = pointsPercentage + '%';
   
+  // 🆕 Enregistrer l'historique avec les détails
   const historyEntry = {
     date: new Date().toISOString(),
     mode: quizMode,
     total: total,
     correct: quizStats.correct,
     wrong: quizStats.wrong,
-    percentage: percentage
+    percentage: percentage,
+    artistPoints: quizStats.artistPoints,
+    titlePoints: quizStats.titlePoints,
+    datePoints: quizStats.datePoints,
+    totalPoints: quizStats.totalPoints,
+    maxPoints: quizStats.maxPoints,
+    pointsPercentage: pointsPercentage,
+    details: currentSessionDetails
   };
   quizHistory.push(historyEntry);
   saveHistoryToLocalStorage();
   
   document.getElementById('nextCardBtn').disabled = true;
+}
+
+// ==================== SESSION STATS MODAL ====================
+function showSessionStatsModal() {
+  const modal = document.getElementById('sessionStatsModal');
+  modal.style.display = 'flex';
+  renderSessionStats();
+}
+
+function closeSessionStatsModal() {
+  document.getElementById('sessionStatsModal').style.display = 'none';
+}
+
+function renderSessionStats() {
+  const container = document.getElementById('sessionStatsList');
+  
+  if (quizHistory.length === 0) {
+    container.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon">📊</div>
+        <p>Aucune session enregistrée</p>
+      </div>
+    `;
+    return;
+  }
+  
+  container.innerHTML = [...quizHistory].reverse().map((session, index) => {
+    const date = new Date(session.date);
+    const dateStr = date.toLocaleDateString('fr-FR', { 
+      day: '2-digit', 
+      month: '2-digit', 
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+    const modeLabel = session.mode === 'all' ? '📚 Toutes les cartes' : '⭐ À travailler';
+    
+    // Calculer les pourcentages par composant
+    const artistPercent = session.total > 0 ? Math.round((session.artistPoints / session.total) * 100) : 0;
+    const titlePercent = session.total > 0 ? Math.round((session.titlePoints / session.total) * 100) : 0;
+    const datePercent = session.total > 0 ? Math.round((session.datePoints / session.total) * 100) : 0;
+    
+    return `
+      <div class="session-stats-item">
+        <div class="session-header">
+          <div>
+            <div class="session-date">${dateStr}</div>
+            <div class="session-mode">${modeLabel}</div>
+          </div>
+          <div class="session-score-badge">
+            ${session.totalPoints}/${session.maxPoints} pts
+          </div>
+        </div>
+        
+        <div class="session-points-grid">
+          <div class="session-point-box">
+            <div class="session-point-icon">👤</div>
+            <div class="session-point-label">Artiste</div>
+            <div class="session-point-value">${session.artistPoints}/${session.total}</div>
+            <div class="session-point-bar">
+              <div class="session-point-fill" style="width: ${artistPercent}%"></div>
+            </div>
+          </div>
+          
+          <div class="session-point-box">
+            <div class="session-point-icon">🎨</div>
+            <div class="session-point-label">Titre</div>
+            <div class="session-point-value">${session.titlePoints}/${session.total}</div>
+            <div class="session-point-bar">
+              <div class="session-point-fill" style="width: ${titlePercent}%"></div>
+            </div>
+          </div>
+          
+          <div class="session-point-box">
+            <div class="session-point-icon">📅</div>
+            <div class="session-point-label">Date</div>
+            <div class="session-point-value">${session.datePoints}/${session.total}</div>
+            <div class="session-point-bar">
+              <div class="session-point-fill" style="width: ${datePercent}%"></div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="session-details-toggle">
+          <button class="btn btn-secondary btn-small" onclick="toggleSessionDetails(${quizHistory.length - 1 - index})">
+            📋 Voir les détails
+          </button>
+        </div>
+        
+        <div id="sessionDetails${quizHistory.length - 1 - index}" class="session-details" style="display: none;">
+          ${renderSessionDetails(session)}
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function toggleSessionDetails(sessionIndex) {
+  const detailsEl = document.getElementById(`sessionDetails${sessionIndex}`);
+  if (detailsEl.style.display === 'none') {
+    detailsEl.style.display = 'block';
+  } else {
+    detailsEl.style.display = 'none';
+  }
+}
+
+function renderSessionDetails(session) {
+  if (!session.details || session.details.length === 0) {
+    return '<p style="text-align: center; color: var(--gray-700); padding: 20px;">Détails non disponibles</p>';
+  }
+  
+  return `
+    <table class="session-details-table">
+      <thead>
+        <tr>
+          <th>Œuvre</th>
+          <th>Artiste</th>
+          <th>Titre</th>
+          <th>Date</th>
+          <th>Points</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${session.details.map((detail, idx) => `
+          <tr class="${detail.isCorrect ? 'detail-correct' : 'detail-wrong'}">
+            <td>${idx + 1}</td>
+            <td>${detail.artistMatch ? '✓' : '✗'}</td>
+            <td>${detail.titleMatch ? '✓' : '✗'}</td>
+            <td>${detail.dateMatch ? '✓' : '✗'}</td>
+            <td><strong>${detail.points}/3</strong></td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+  `;
 }
 
 // ==================== UTILS ====================
@@ -975,3 +1140,5 @@ function loadHistoryFromLocalStorage() {
 
 window.selectCard = selectCard;
 window.closeHistoryModal = closeHistoryModal;
+window.closeSessionStatsModal = closeSessionStatsModal;
+window.toggleSessionDetails = toggleSessionDetails;

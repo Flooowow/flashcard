@@ -182,7 +182,10 @@ function createNewCard() {
       played: 0,
       correct: 0,
       wrong: 0,
-      successRate: 0
+      successRate: 0,
+      artistCorrect: 0,
+      titleCorrect: 0,
+      dateCorrect: 0
     }
   };
   cards.push(newCard);
@@ -198,8 +201,12 @@ function selectCard(cardId) {
   if (!card) return;
 
   if (!card.stats) {
-    card.stats = { played: 0, correct: 0, wrong: 0, successRate: 0 };
+    card.stats = { played: 0, correct: 0, wrong: 0, successRate: 0, artistCorrect: 0, titleCorrect: 0, dateCorrect: 0 };
   }
+  if (!card.stats.artistCorrect) card.stats.artistCorrect = 0;
+  if (!card.stats.titleCorrect) card.stats.titleCorrect = 0;
+  if (!card.stats.dateCorrect) card.stats.dateCorrect = 0;
+  
   if (card.toWork === undefined) {
     card.toWork = false;
   }
@@ -237,6 +244,15 @@ function selectCard(cardId) {
   document.getElementById('statCorrect').textContent = card.stats.correct;
   document.getElementById('statWrong').textContent = card.stats.wrong;
   document.getElementById('statRate').textContent = card.stats.successRate + '%';
+  
+  // Afficher les taux détaillés
+  const artistRate = card.stats.played > 0 ? Math.round((card.stats.artistCorrect / card.stats.played) * 100) : 0;
+  const titleRate = card.stats.played > 0 ? Math.round((card.stats.titleCorrect / card.stats.played) * 100) : 0;
+  const dateRate = card.stats.played > 0 ? Math.round((card.stats.dateCorrect / card.stats.played) * 100) : 0;
+  
+  document.getElementById('statArtistRate').textContent = artistRate + '%';
+  document.getElementById('statTitleRate').textContent = titleRate + '%';
+  document.getElementById('statDateRate').textContent = dateRate + '%';
 }
 
 function saveCard() {
@@ -334,12 +350,15 @@ async function resetCardStats() {
   const card = cards.find(c => c.id === currentEditId);
   if (!card) return;
 
-  card.stats = { played: 0, correct: 0, wrong: 0, successRate: 0 };
+  card.stats = { played: 0, correct: 0, wrong: 0, successRate: 0, artistCorrect: 0, titleCorrect: 0, dateCorrect: 0 };
   
   document.getElementById('statPlayed').textContent = '0';
   document.getElementById('statCorrect').textContent = '0';
   document.getElementById('statWrong').textContent = '0';
   document.getElementById('statRate').textContent = '0%';
+  document.getElementById('statArtistRate').textContent = '0%';
+  document.getElementById('statTitleRate').textContent = '0%';
+  document.getElementById('statDateRate').textContent = '0%';
 
   saveToLocalStorage();
   showToast('Statistiques réinitialisées', 'success');
@@ -405,6 +424,14 @@ function sortCards(sortType) {
     case 'artist':
       cards.sort((a, b) => (a.artist || '').localeCompare(b.artist || ''));
       break;
+    case 'towork':
+      cards.sort((a, b) => {
+        // Les cartes "À travailler" en premier
+        if (a.toWork && !b.toWork) return -1;
+        if (!a.toWork && b.toWork) return 1;
+        return 0;
+      });
+      break;
     case 'order':
     default:
       cards.sort((a, b) => a.order - b.order);
@@ -430,16 +457,17 @@ function renderCardsList() {
     const displayArtist = card.artist || 'Artiste inconnu';
     const displayDate = card.date || '?';
     const thumbnail = card.image || 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="60" height="60"%3E%3Crect fill="%23e5e7eb" width="60" height="60"/%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" dy=".3em" fill="%239ca3af" font-size="24"%3E🎨%3C/text%3E%3C/svg%3E';
-    const toWorkBadge = card.toWork ? '<span class="towork-badge">⭐</span>' : '';
+    const toWorkBadge = card.toWork ? '<span class="towork-badge-corner">⭐</span>' : '';
     const errorBadge = card.hasError ? '<span class="error-badge" title="Erreur signalée">⚠️</span>' : '';
 
     return `
       <div class="card-item ${currentEditId === card.id ? 'active' : ''}" 
            data-card-id="${card.id}"
            onclick="selectCard(${card.id})">
+        ${toWorkBadge}
         <img src="${thumbnail}" alt="${displayTitle}" class="card-item-thumb">
         <div class="card-item-info">
-          <div class="card-item-title">${escapeHtml(displayTitle)} ${toWorkBadge}</div>
+          <div class="card-item-title">${escapeHtml(displayTitle)}</div>
           <div class="card-item-meta">${escapeHtml(displayArtist)} - ${escapeHtml(displayDate)}</div>
         </div>
         ${errorBadge}
@@ -584,14 +612,24 @@ function verifyAnswer() {
   });
 
   if (!card.stats) {
-    card.stats = { played: 0, correct: 0, wrong: 0, successRate: 0 };
+    card.stats = { played: 0, correct: 0, wrong: 0, successRate: 0, artistCorrect: 0, titleCorrect: 0, dateCorrect: 0 };
   }
+  if (!card.stats.artistCorrect) card.stats.artistCorrect = 0;
+  if (!card.stats.titleCorrect) card.stats.titleCorrect = 0;
+  if (!card.stats.dateCorrect) card.stats.dateCorrect = 0;
+  
   card.stats.played++;
   if (isCorrect) {
     card.stats.correct++;
   } else {
     card.stats.wrong++;
   }
+  
+  // Enregistrer les stats détaillées
+  if (artistMatch) card.stats.artistCorrect++;
+  if (titleMatch) card.stats.titleCorrect++;
+  if (dateMatch) card.stats.dateCorrect++;
+  
   card.stats.successRate = Math.round((card.stats.correct / card.stats.played) * 100);
   
   saveToLocalStorage();
@@ -1148,8 +1186,11 @@ function loadFromLocalStorage() {
       cards = JSON.parse(saved);
       cards.forEach(card => {
         if (!card.stats) {
-          card.stats = { played: 0, correct: 0, wrong: 0, successRate: 0 };
+          card.stats = { played: 0, correct: 0, wrong: 0, successRate: 0, artistCorrect: 0, titleCorrect: 0, dateCorrect: 0 };
         }
+        if (!card.stats.artistCorrect) card.stats.artistCorrect = 0;
+        if (!card.stats.titleCorrect) card.stats.titleCorrect = 0;
+        if (!card.stats.dateCorrect) card.stats.dateCorrect = 0;
         if (card.toWork === undefined) {
           card.toWork = false;
         }

@@ -283,6 +283,16 @@ header h1 {
   animation: pulse 2s ease-in-out infinite;
 }
 
+.towork-badge-corner {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  font-size: 20px;
+  animation: pulse 2s ease-in-out infinite;
+  filter: drop-shadow(0 2px 4px rgba(212, 175, 55, 0.4));
+  z-index: 10;
+}
+
 .error-badge {
   position: absolute;
   bottom: 8px;
@@ -471,6 +481,61 @@ header h1 {
   font-size: 12px;
   color: var(--anthracite);
   font-weight: 500;
+}
+
+/* Statistiques détaillées */
+.stats-detailed {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 2px solid var(--beige);
+}
+
+.stats-detailed h5 {
+  font-size: 14px;
+  color: var(--burgundy);
+  margin-bottom: 15px;
+  font-weight: 600;
+}
+
+.stats-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 15px;
+}
+
+.stat-detail-box {
+  background: linear-gradient(135deg, var(--light-cream) 0%, var(--cream) 100%);
+  border: 2px solid var(--gold);
+  border-radius: 10px;
+  padding: 15px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  transition: all 0.3s;
+}
+
+.stat-detail-box:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(212, 175, 55, 0.3);
+}
+
+.stat-detail-icon {
+  font-size: 24px;
+  margin-bottom: 5px;
+}
+
+.stat-detail-label {
+  font-size: 12px;
+  color: var(--anthracite);
+  font-weight: 600;
+}
+
+.stat-detail-value {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--burgundy);
 }
 
 .btn-small {

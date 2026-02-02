@@ -9,7 +9,6 @@ let quizHistory = []; // Historique des sessions
 let quizMode = 'all'; // 'all' ou 'towork'
 let quizAnswered = false;
 let currentSessionDetails = []; // Détails de la session en cours
-let cardStartTime = null; // Temps de début pour la carte actuelle
 let sessionStartTime = null; // Temps de début de la session
 let totalQuizTime = 0; // Temps total passé en mode quiz (en secondes)
 let timerInterval = null; // Intervalle pour mettre à jour le timer
@@ -52,7 +51,6 @@ function setupEventListeners() {
   // Mode quiz
   document.getElementById('verifyBtn').addEventListener('click', verifyAnswer);
   document.getElementById('saveNoteBtn').addEventListener('click', saveNoteFromQuiz);
-  document.getElementById('quizInput').addEventListener('input', startCardTimer);
   document.getElementById('nextCardBtn').addEventListener('click', () => {
     nextQuizCard();
   });
@@ -515,10 +513,10 @@ function updateGlobalStats() {
 }
 
 // ==================== QUIZ MODE ====================
-function startCardTimer() {
-  // Démarrer le timer seulement si pas encore démarré pour cette carte
-  if (cardStartTime === null) {
-    cardStartTime = Date.now();
+function startSessionTimer() {
+  // Démarrer le timer de session seulement au début du quiz
+  if (sessionStartTime === null) {
+    sessionStartTime = Date.now();
     
     // Démarrer l'intervalle pour mettre à jour l'affichage
     if (timerInterval) clearInterval(timerInterval);
@@ -527,32 +525,24 @@ function startCardTimer() {
 }
 
 function updateTimerDisplay() {
-  if (cardStartTime === null) return;
+  if (sessionStartTime === null) return;
   
-  const elapsed = Math.floor((Date.now() - cardStartTime) / 1000);
+  const elapsed = Math.floor((Date.now() - sessionStartTime) / 1000);
   const timerDisplay = document.getElementById('timerDisplay');
-  
-  if (elapsed < 60) {
-    timerDisplay.textContent = `⏱️ ${elapsed}s`;
-  } else {
-    const minutes = Math.floor(elapsed / 60);
-    const seconds = elapsed % 60;
-    timerDisplay.textContent = `⏱️ ${minutes}min ${seconds}s`;
-  }
+  timerDisplay.textContent = `⏱️ ${formatTime(elapsed)}`;
 }
 
 function formatTime(seconds) {
-  if (seconds < 60) {
-    return `${seconds}s`;
-  } else if (seconds < 3600) {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}min ${secs}s`;
-  } else {
-    const hours = Math.floor(seconds / 3600);
-    const mins = Math.floor((seconds % 3600) / 60);
-    return `${hours}h ${mins}min`;
-  }
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  const secs = seconds % 60;
+  
+  // Format HH:MM:SS avec zéros devant
+  const hh = String(hours).padStart(2, '0');
+  const mm = String(minutes).padStart(2, '0');
+  const ss = String(secs).padStart(2, '0');
+  
+  return `${hh}:${mm}:${ss}`;
 }
 
 function startQuiz() {
@@ -582,7 +572,10 @@ function startQuiz() {
   quizAnswered = false;
   currentSessionDetails = [];
   sessionStartTime = Date.now(); // Démarrer le chrono de session
-  cardStartTime = null; // Reset du timer de carte
+  
+  // Démarrer l'intervalle du timer
+  if (timerInterval) clearInterval(timerInterval);
+  timerInterval = setInterval(updateTimerDisplay, 1000);
   
   document.getElementById('quizEmpty').style.display = 'none';
   document.getElementById('quizCard').style.display = 'block';
@@ -610,8 +603,6 @@ function showQuizCard() {
   document.getElementById('quizFeedback').style.display = 'none';
   
   quizAnswered = false;
-  cardStartTime = null; // Reset le timer pour la nouvelle carte
-  document.getElementById('timerDisplay').textContent = '⏱️ 0s';
   
   updateQuizProgress();
   
@@ -656,15 +647,7 @@ function verifyAnswer() {
     quizStats.wrong++;
   }
   
-  // 🆕 Enregistrer les détails de la réponse avec le temps
-  const cardTime = cardStartTime ? Math.floor((Date.now() - cardStartTime) / 1000) : 0;
-  
-  // Arrêter le timer
-  if (timerInterval) {
-    clearInterval(timerInterval);
-    timerInterval = null;
-  }
-  
+  // 🆕 Enregistrer les détails de la réponse (sans le temps)
   currentSessionDetails.push({
     cardId: card.id,
     artist: card.artist,
@@ -675,8 +658,7 @@ function verifyAnswer() {
     titleMatch,
     dateMatch,
     points,
-    isCorrect,
-    time: cardTime
+    isCorrect
   });
 
   if (!card.stats) {
@@ -815,6 +797,12 @@ function updateQuizProgress() {
 }
 
 function showQuizResults() {
+  // Arrêter le timer de session
+  if (timerInterval) {
+    clearInterval(timerInterval);
+    timerInterval = null;
+  }
+  
   document.getElementById('quizCard').style.display = 'none';
   document.getElementById('quizResult').style.display = 'block';
   
@@ -837,7 +825,7 @@ function showQuizResults() {
   saveTotalTimeToLocalStorage();
   updateGlobalStats();
   
-  // 🆕 Enregistrer l'historique avec les détails et le temps
+  // 🆕 Enregistrer l'historique avec le temps total uniquement
   const historyEntry = {
     date: new Date().toISOString(),
     mode: quizMode,
@@ -851,8 +839,7 @@ function showQuizResults() {
     totalPoints: quizStats.totalPoints,
     maxPoints: quizStats.maxPoints,
     pointsPercentage: pointsPercentage,
-    duration: sessionDuration,
-    details: currentSessionDetails
+    duration: sessionDuration
   };
   quizHistory.push(historyEntry);
   saveHistoryToLocalStorage();
@@ -946,61 +933,9 @@ function renderSessionStats() {
             </div>
           </div>
         </div>
-        
-        <div class="session-details-toggle">
-          <button class="btn btn-secondary btn-small" onclick="toggleSessionDetails(${quizHistory.length - 1 - index})">
-            📋 Voir les détails
-          </button>
-        </div>
-        
-        <div id="sessionDetails${quizHistory.length - 1 - index}" class="session-details" style="display: none;">
-          ${renderSessionDetails(session)}
-        </div>
       </div>
     `;
   }).join('');
-}
-
-function toggleSessionDetails(sessionIndex) {
-  const detailsEl = document.getElementById(`sessionDetails${sessionIndex}`);
-  if (detailsEl.style.display === 'none') {
-    detailsEl.style.display = 'block';
-  } else {
-    detailsEl.style.display = 'none';
-  }
-}
-
-function renderSessionDetails(session) {
-  if (!session.details || session.details.length === 0) {
-    return '<p style="text-align: center; color: var(--gray-700); padding: 20px;">Détails non disponibles</p>';
-  }
-  
-  return `
-    <table class="session-details-table">
-      <thead>
-        <tr>
-          <th>Œuvre</th>
-          <th>Artiste</th>
-          <th>Titre</th>
-          <th>Date</th>
-          <th>Points</th>
-          <th>⏱️ Temps</th>
-        </tr>
-      </thead>
-      <tbody>
-        ${session.details.map((detail, idx) => `
-          <tr class="${detail.isCorrect ? 'detail-correct' : 'detail-wrong'}">
-            <td>${idx + 1}</td>
-            <td>${detail.artistMatch ? '✓' : '✗'}</td>
-            <td>${detail.titleMatch ? '✓' : '✗'}</td>
-            <td>${detail.dateMatch ? '✓' : '✗'}</td>
-            <td><strong>${detail.points}/3</strong></td>
-            <td>${detail.time ? detail.time + 's' : 'N/A'}</td>
-          </tr>
-        `).join('')}
-      </tbody>
-    </table>
-  `;
 }
 
 // ==================== UTILS ====================
@@ -1342,4 +1277,3 @@ function loadTotalTimeFromLocalStorage() {
 window.selectCard = selectCard;
 window.closeHistoryModal = closeHistoryModal;
 window.closeSessionStatsModal = closeSessionStatsModal;
-window.toggleSessionDetails = toggleSessionDetails;

@@ -46,6 +46,10 @@
                 <span class="stat-mini-number stat-success" id="globalSuccessRate">0%</span>
                 <span class="stat-mini-label">Taux global</span>
               </div>
+              <div class="stat-mini-box stat-mini-full">
+                <span class="stat-mini-number" id="globalTotalTime">0h 0min</span>
+                <span class="stat-mini-label">⏱️ Temps total quiz</span>
+              </div>
             </div>
             <button id="viewSessionStatsBtn" class="btn btn-secondary btn-small" style="margin-top: 10px; width: 100%;">📊 Voir les sessions</button>
           </div>
@@ -197,7 +201,10 @@
         </div>
         
         <div class="quiz-progress">
-          <span id="progressText">1 / 55</span>
+          <div class="quiz-progress-row">
+            <span id="progressText">1 / 55</span>
+            <span id="timerDisplay" class="timer-display">⏱️ 0s</span>
+          </div>
           <div class="progress-bar">
             <div id="progressFill" class="progress-fill"></div>
           </div>
@@ -271,6 +278,10 @@
             <div class="stat">
               <span class="stat-value" id="pointsPercent">0%</span>
               <span class="stat-label">Taux points</span>
+            </div>
+            <div class="stat">
+              <span class="stat-value" id="sessionTime">0min 0s</span>
+              <span class="stat-label">⏱️ Temps total</span>
             </div>
           </div>
           <div class="result-actions">

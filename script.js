@@ -9,11 +9,16 @@ let quizHistory = []; // Historique des sessions
 let quizMode = 'all'; // 'all' ou 'towork'
 let quizAnswered = false;
 let currentSessionDetails = []; // Détails de la session en cours
+let cardStartTime = null; // Temps de début pour la carte actuelle
+let sessionStartTime = null; // Temps de début de la session
+let totalQuizTime = 0; // Temps total passé en mode quiz (en secondes)
+let timerInterval = null; // Intervalle pour mettre à jour le timer
 
 // ==================== INITIALISATION ====================
 document.addEventListener('DOMContentLoaded', () => {
   loadFromLocalStorage();
   loadHistoryFromLocalStorage();
+  loadTotalTimeFromLocalStorage();
   setupEventListeners();
   renderCardsList();
 });
@@ -47,6 +52,7 @@ function setupEventListeners() {
   // Mode quiz
   document.getElementById('verifyBtn').addEventListener('click', verifyAnswer);
   document.getElementById('saveNoteBtn').addEventListener('click', saveNoteFromQuiz);
+  document.getElementById('quizInput').addEventListener('input', startCardTimer);
   document.getElementById('nextCardBtn').addEventListener('click', () => {
     nextQuizCard();
   });
@@ -497,9 +503,58 @@ function updateGlobalStats() {
   document.getElementById('globalTotalCards').textContent = totalCards;
   document.getElementById('globalToWork').textContent = toWorkCards;
   document.getElementById('globalSuccessRate').textContent = globalSuccessRate + '%';
+  
+  // Afficher le temps total
+  const hours = Math.floor(totalQuizTime / 3600);
+  const minutes = Math.floor((totalQuizTime % 3600) / 60);
+  if (hours > 0) {
+    document.getElementById('globalTotalTime').textContent = `${hours}h ${minutes}min`;
+  } else {
+    document.getElementById('globalTotalTime').textContent = `${minutes}min`;
+  }
 }
 
 // ==================== QUIZ MODE ====================
+function startCardTimer() {
+  // Démarrer le timer seulement si pas encore démarré pour cette carte
+  if (cardStartTime === null) {
+    cardStartTime = Date.now();
+    
+    // Démarrer l'intervalle pour mettre à jour l'affichage
+    if (timerInterval) clearInterval(timerInterval);
+    timerInterval = setInterval(updateTimerDisplay, 1000);
+  }
+}
+
+function updateTimerDisplay() {
+  if (cardStartTime === null) return;
+  
+  const elapsed = Math.floor((Date.now() - cardStartTime) / 1000);
+  const timerDisplay = document.getElementById('timerDisplay');
+  
+  if (elapsed < 60) {
+    timerDisplay.textContent = `⏱️ ${elapsed}s`;
+  } else {
+    const minutes = Math.floor(elapsed / 60);
+    const seconds = elapsed % 60;
+    timerDisplay.textContent = `⏱️ ${minutes}min ${seconds}s`;
+  }
+}
+
+function formatTime(seconds) {
+  if (seconds < 60) {
+    return `${seconds}s`;
+  } else if (seconds < 3600) {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}min ${secs}s`;
+  } else {
+    const hours = Math.floor(seconds / 3600);
+    const mins = Math.floor((seconds % 3600) / 60);
+    return `${hours}h ${mins}min`;
+  }
+}
+
 function startQuiz() {
   let availableCards = cards.filter(c => c.artist && c.title && c.date && c.image);
   
@@ -526,6 +581,8 @@ function startQuiz() {
   quizStats = { correct: 0, wrong: 0, artistPoints: 0, titlePoints: 0, datePoints: 0, totalPoints: 0, maxPoints: 0 };
   quizAnswered = false;
   currentSessionDetails = [];
+  sessionStartTime = Date.now(); // Démarrer le chrono de session
+  cardStartTime = null; // Reset du timer de carte
   
   document.getElementById('quizEmpty').style.display = 'none';
   document.getElementById('quizCard').style.display = 'block';
@@ -553,6 +610,8 @@ function showQuizCard() {
   document.getElementById('quizFeedback').style.display = 'none';
   
   quizAnswered = false;
+  cardStartTime = null; // Reset le timer pour la nouvelle carte
+  document.getElementById('timerDisplay').textContent = '⏱️ 0s';
   
   updateQuizProgress();
   
@@ -597,7 +656,15 @@ function verifyAnswer() {
     quizStats.wrong++;
   }
   
-  // 🆕 Enregistrer les détails de la réponse
+  // 🆕 Enregistrer les détails de la réponse avec le temps
+  const cardTime = cardStartTime ? Math.floor((Date.now() - cardStartTime) / 1000) : 0;
+  
+  // Arrêter le timer
+  if (timerInterval) {
+    clearInterval(timerInterval);
+    timerInterval = null;
+  }
+  
   currentSessionDetails.push({
     cardId: card.id,
     artist: card.artist,
@@ -608,7 +675,8 @@ function verifyAnswer() {
     titleMatch,
     dateMatch,
     points,
-    isCorrect
+    isCorrect,
+    time: cardTime
   });
 
   if (!card.stats) {
@@ -754,13 +822,22 @@ function showQuizResults() {
   const percentage = total > 0 ? Math.round((quizStats.correct / total) * 100) : 0;
   const pointsPercentage = quizStats.maxPoints > 0 ? Math.round((quizStats.totalPoints / quizStats.maxPoints) * 100) : 0;
   
+  // Calculer le temps total de la session
+  const sessionDuration = sessionStartTime ? Math.floor((Date.now() - sessionStartTime) / 1000) : 0;
+  
   document.getElementById('correctCount').textContent = quizStats.correct;
   document.getElementById('wrongCount').textContent = quizStats.wrong;
   document.getElementById('scorePercent').textContent = percentage + '%';
   document.getElementById('pointsScore').textContent = `${quizStats.totalPoints}/${quizStats.maxPoints}`;
   document.getElementById('pointsPercent').textContent = pointsPercentage + '%';
+  document.getElementById('sessionTime').textContent = formatTime(sessionDuration);
   
-  // 🆕 Enregistrer l'historique avec les détails
+  // Ajouter au temps total global
+  totalQuizTime += sessionDuration;
+  saveTotalTimeToLocalStorage();
+  updateGlobalStats();
+  
+  // 🆕 Enregistrer l'historique avec les détails et le temps
   const historyEntry = {
     date: new Date().toISOString(),
     mode: quizMode,
@@ -774,6 +851,7 @@ function showQuizResults() {
     totalPoints: quizStats.totalPoints,
     maxPoints: quizStats.maxPoints,
     pointsPercentage: pointsPercentage,
+    duration: sessionDuration,
     details: currentSessionDetails
   };
   quizHistory.push(historyEntry);
@@ -816,6 +894,7 @@ function renderSessionStats() {
       minute: '2-digit'
     });
     const modeLabel = session.mode === 'all' ? '📚 Toutes les cartes' : '⭐ À travailler';
+    const duration = session.duration ? formatTime(session.duration) : 'N/A';
     
     // Calculer les pourcentages par composant
     const artistPercent = session.total > 0 ? Math.round((session.artistPoints / session.total) * 100) : 0;
@@ -829,8 +908,13 @@ function renderSessionStats() {
             <div class="session-date">${dateStr}</div>
             <div class="session-mode">${modeLabel}</div>
           </div>
-          <div class="session-score-badge">
-            ${session.totalPoints}/${session.maxPoints} pts
+          <div class="session-header-right">
+            <div class="session-score-badge">
+              ${session.totalPoints}/${session.maxPoints} pts
+            </div>
+            <div class="session-time-badge">
+              ⏱️ ${duration}
+            </div>
           </div>
         </div>
         
@@ -900,6 +984,7 @@ function renderSessionDetails(session) {
           <th>Titre</th>
           <th>Date</th>
           <th>Points</th>
+          <th>⏱️ Temps</th>
         </tr>
       </thead>
       <tbody>
@@ -910,6 +995,7 @@ function renderSessionDetails(session) {
             <td>${detail.titleMatch ? '✓' : '✗'}</td>
             <td>${detail.dateMatch ? '✓' : '✗'}</td>
             <td><strong>${detail.points}/3</strong></td>
+            <td>${detail.time ? detail.time + 's' : 'N/A'}</td>
           </tr>
         `).join('')}
       </tbody>
@@ -1053,6 +1139,7 @@ function renderHistory() {
       minute: '2-digit'
     });
     const modeLabel = entry.mode === 'all' ? '📚 Toutes les cartes' : '⭐ À travailler';
+    const duration = entry.duration ? formatTime(entry.duration) : 'N/A';
 
     return `
       <div class="history-item">
@@ -1072,6 +1159,10 @@ function renderHistory() {
           <div class="history-stat">
             <span class="history-stat-value" style="color: var(--gold)">${entry.percentage}%</span>
             <span class="history-stat-label">Score</span>
+          </div>
+          <div class="history-stat">
+            <span class="history-stat-value" style="color: var(--burgundy)">⏱️ ${duration}</span>
+            <span class="history-stat-label">Temps</span>
           </div>
         </div>
       </div>
@@ -1225,6 +1316,26 @@ function loadHistoryFromLocalStorage() {
   } catch (e) {
     console.error('Erreur chargement historique:', e);
     quizHistory = [];
+  }
+}
+
+function saveTotalTimeToLocalStorage() {
+  try {
+    localStorage.setItem('totalQuizTime', totalQuizTime.toString());
+  } catch (e) {
+    console.error('Erreur sauvegarde temps total:', e);
+  }
+}
+
+function loadTotalTimeFromLocalStorage() {
+  try {
+    const saved = localStorage.getItem('totalQuizTime');
+    if (saved) {
+      totalQuizTime = parseInt(saved) || 0;
+    }
+  } catch (e) {
+    console.error('Erreur chargement temps total:', e);
+    totalQuizTime = 0;
   }
 }
 

@@ -177,6 +177,12 @@ header h1 {
   text-align: center;
 }
 
+.stat-mini-box.stat-mini-full {
+  grid-column: 1 / -1;
+  background: linear-gradient(135deg, var(--light-cream) 0%, var(--beige) 100%);
+  border-color: var(--gold);
+}
+
 .stat-mini-number {
   display: block;
   font-size: 20px;
@@ -713,12 +719,26 @@ header h1 {
   margin: 0 auto;
 }
 
+.quiz-progress-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
 #progressText {
-  display: block;
-  text-align: center;
   font-size: 16px;
   font-weight: 600;
-  margin-bottom: 10px;
+}
+
+.timer-display {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--gold);
+  background: rgba(212, 175, 55, 0.2);
+  padding: 5px 12px;
+  border-radius: 6px;
+  border: 2px solid var(--gold);
 }
 
 .progress-bar {
@@ -1117,7 +1137,7 @@ header h1 {
 
 .history-stats {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 15px;
 }
 
@@ -1294,6 +1314,12 @@ header h1 {
   border-bottom: 2px solid var(--beige);
 }
 
+.session-header-right {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
 .session-date {
   font-weight: 700;
   color: var(--burgundy);
@@ -1319,6 +1345,16 @@ header h1 {
   font-weight: 700;
   font-size: 18px;
   box-shadow: 0 2px 8px rgba(124, 29, 29, 0.3);
+}
+
+.session-time-badge {
+  background: var(--gold);
+  color: var(--charcoal);
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 14px;
+  box-shadow: 0 2px 8px rgba(212, 175, 55, 0.3);
 }
 
 .session-points-grid {

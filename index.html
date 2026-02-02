@@ -173,6 +173,14 @@
             <small style="color: var(--gray-700); font-size: 12px;">Cette note s'affichera après votre réponse pour vous aider à mémoriser</small>
           </div>
 
+          <div class="form-group">
+            <label class="checkbox-label">
+              <input type="checkbox" id="cardHasError">
+              <span>⚠️ Cette carte contient une erreur</span>
+            </label>
+            <small style="color: var(--gray-700); font-size: 12px; display: block; margin-top: 5px;">Cochez si vous avez détecté une erreur (artiste, titre, date incorrects)</small>
+          </div>
+
           <div class="editor-actions">
             <button id="saveCardBtn" class="btn btn-success">💾 Enregistrer</button>
             <button id="cancelEditBtn" class="btn btn-secondary">Annuler</button>
@@ -249,7 +257,7 @@
             <div id="noteDisplay" class="note-display">
               <div class="note-header">📝 Note / Moyen mnémotechnique</div>
               <textarea id="noteInput" class="note-input" placeholder="Écrivez ici vos astuces, contexte historique, moyen mnémotechnique..." rows="3"></textarea>
-              <button id="saveNoteBtn" class="btn btn-success btn-small" style="margin-top: 10px;">💾 Sauvegarder la note</button>
+              <button id="saveNoteBtn" class="btn btn-success btn-small" style="margin-top: 10px;">💾 Sauvegarder</button>
             </div>
           </div>
         </div>

@@ -51,6 +51,7 @@ function setupEventListeners() {
   // Mode quiz
   document.getElementById('verifyBtn').addEventListener('click', verifyAnswer);
   document.getElementById('saveNoteBtn').addEventListener('click', saveNoteFromQuiz);
+  document.getElementById('cardErrorCheckbox').addEventListener('change', autoSaveErrorCheckbox);
   document.getElementById('nextCardBtn').addEventListener('click', () => {
     nextQuizCard();
   });
@@ -227,6 +228,7 @@ function selectCard(cardId) {
   document.getElementById('cardTitle').value = card.title || '';
   document.getElementById('cardDate').value = card.date || '';
   document.getElementById('cardNote').value = card.note || '';
+  document.getElementById('cardHasError').checked = card.hasError || false;
 
   const preview = document.getElementById('imagePreview');
   if (card.image) {
@@ -267,6 +269,7 @@ function saveCard() {
   const title = document.getElementById('cardTitle').value.trim();
   const date = document.getElementById('cardDate').value.trim();
   const note = document.getElementById('cardNote').value.trim();
+  const hasError = document.getElementById('cardHasError').checked;
 
   if (!artist || !title || !date) {
     showToast('Veuillez remplir tous les champs obligatoires', 'error');
@@ -282,6 +285,7 @@ function saveCard() {
   card.title = title;
   card.date = date;
   card.note = note;
+  card.hasError = hasError;
 
   renderCardsList();
   saveToLocalStorage();
@@ -502,14 +506,8 @@ function updateGlobalStats() {
   document.getElementById('globalToWork').textContent = toWorkCards;
   document.getElementById('globalSuccessRate').textContent = globalSuccessRate + '%';
   
-  // Afficher le temps total
-  const hours = Math.floor(totalQuizTime / 3600);
-  const minutes = Math.floor((totalQuizTime % 3600) / 60);
-  if (hours > 0) {
-    document.getElementById('globalTotalTime').textContent = `${hours}h ${minutes}min`;
-  } else {
-    document.getElementById('globalTotalTime').textContent = `${minutes}min`;
-  }
+  // Afficher le temps total en HH:MM:SS
+  document.getElementById('globalTotalTime').textContent = formatTime(totalQuizTime);
 }
 
 // ==================== QUIZ MODE ====================
@@ -779,6 +777,29 @@ function saveNoteFromQuiz() {
   }
 }
 
+function autoSaveErrorCheckbox() {
+  const card = quizCards[currentQuizIndex];
+  const cardErrorCheckbox = document.getElementById('cardErrorCheckbox');
+  const hasError = cardErrorCheckbox.checked;
+  
+  // Trouver la carte dans le tableau principal et mettre à jour
+  const originalCard = cards.find(c => c.id === card.id);
+  if (originalCard) {
+    originalCard.hasError = hasError;
+    card.hasError = hasError;
+    saveToLocalStorage();
+    
+    if (hasError) {
+      showToast('⚠️ Erreur signalée automatiquement', 'info');
+    } else {
+      showToast('✅ Erreur retirée', 'info');
+    }
+    
+    // Mettre à jour l'affichage dans la liste
+    renderCardsList();
+  }
+}
+
 function prevQuizCard() {
   if (currentQuizIndex > 0) {
     currentQuizIndex--;
@@ -882,6 +903,7 @@ function renderSessionStats() {
     });
     const modeLabel = session.mode === 'all' ? '📚 Toutes les cartes' : '⭐ À travailler';
     const duration = session.duration ? formatTime(session.duration) : 'N/A';
+    const sessionIndex = quizHistory.length - 1 - index;
     
     // Calculer les pourcentages par composant
     const artistPercent = session.total > 0 ? Math.round((session.artistPoints / session.total) * 100) : 0;
@@ -902,6 +924,9 @@ function renderSessionStats() {
             <div class="session-time-badge">
               ⏱️ ${duration}
             </div>
+            <button class="btn-icon-delete" onclick="deleteSession(${sessionIndex})" title="Supprimer cette session">
+              🗑️
+            </button>
           </div>
         </div>
         
@@ -1196,6 +1221,29 @@ async function clearHistory() {
   showToast('Historique effacé', 'info');
 }
 
+async function deleteSession(sessionIndex) {
+  const confirmed = await showConfirm(
+    'Supprimer cette session ?',
+    'Voulez-vous vraiment supprimer cette session ? Cette action est irréversible.'
+  );
+  
+  if (!confirmed) return;
+  
+  // Soustraire le temps de cette session du temps total
+  const session = quizHistory[sessionIndex];
+  if (session && session.duration) {
+    totalQuizTime -= session.duration;
+    if (totalQuizTime < 0) totalQuizTime = 0;
+    saveTotalTimeToLocalStorage();
+    updateGlobalStats();
+  }
+  
+  quizHistory.splice(sessionIndex, 1);
+  saveHistoryToLocalStorage();
+  renderSessionStats();
+  showToast('Session supprimée', 'info');
+}
+
 // ==================== STORAGE ====================
 function saveToLocalStorage() {
   try {
@@ -1277,3 +1325,4 @@ function loadTotalTimeFromLocalStorage() {
 window.selectCard = selectCard;
 window.closeHistoryModal = closeHistoryModal;
 window.closeSessionStatsModal = closeSessionStatsModal;
+window.deleteSession = deleteSession;

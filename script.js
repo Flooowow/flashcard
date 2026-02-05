@@ -610,71 +610,71 @@ function saveCard() {
   updateGlobalStats();
 }
 
-async function deleteCard() {
+function deleteCard() {
   if (!currentEditId) return;
   
-  const confirmed = await showConfirm(
+  showConfirm(
     'Supprimer la carte ?',
     'Voulez-vous vraiment supprimer cette carte ? Cette action est irréversible.'
-  );
-  
-  if (!confirmed) return;
+  ).then(confirmed => {
+    if (!confirmed) return;
 
-  cards = cards.filter(c => c.id !== currentEditId);
-  currentEditId = null;
-  
-  document.getElementById('cardEditor').style.display = 'none';
-  const editorContent = document.querySelector('.editor-content');
-  if (!document.querySelector('.empty-state')) {
-    editorContent.innerHTML = `
-      <div class="empty-state">
-        <div class="empty-icon">🎨</div>
-        <h3>Aucune carte sélectionnée</h3>
-        <p>Sélectionnez une carte ou créez-en une nouvelle</p>
-      </div>
-    `;
-  }
+    cards = cards.filter(c => c.id !== currentEditId);
+    currentEditId = null;
+    
+    document.getElementById('cardEditor').style.display = 'none';
+    const editorContent = document.querySelector('.editor-content');
+    if (!document.querySelector('.empty-state')) {
+      editorContent.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-icon">🎨</div>
+          <h3>Aucune carte sélectionnée</h3>
+          <p>Sélectionnez une carte ou créez-en une nouvelle</p>
+        </div>
+      `;
+    }
 
-  renderCardsList();
-  saveToStorage();
-  showToast('Carte supprimée', 'info');
+    renderCardsList();
+    saveToStorage();
+    showToast('Carte supprimée', 'info');
+  });
 }
 
-async function resetCardStats() {
+function resetCardStats() {
   if (!currentEditId) return;
   
-  const confirmed = await showConfirm(
+  showConfirm(
     'Réinitialiser les statistiques ?',
     'Voulez-vous remettre à zéro toutes les statistiques de cette carte ?'
-  );
-  
-  if (!confirmed) return;
+  ).then(confirmed => {
+    if (!confirmed) return;
 
-  const card = cards.find(c => c.id === currentEditId);
-  if (!card) return;
+    const card = cards.find(c => c.id === currentEditId);
+    if (!card) return;
 
-  card.stats = { played: 0, correct: 0, wrong: 0, successRate: 0, artistCorrect: 0, titleCorrect: 0, dateCorrect: 0 };
-  card.lastPlayed = null;
-  
-  document.getElementById('statPlayed').textContent = '0';
-  document.getElementById('statCorrect').textContent = '0';
-  document.getElementById('statWrong').textContent = '0';
-  document.getElementById('statRate').textContent = '0%';
-  document.getElementById('statArtistRate').textContent = '0%';
-  document.getElementById('statTitleRate').textContent = '0%';
-  document.getElementById('statDateRate').textContent = '0%';
-  document.getElementById('lastPlayed').textContent = 'Jamais';
-  
-  // Recalculer le badge de maîtrise
-  const masteryBadge = document.getElementById('masteryBadge');
-  masteryBadge.innerHTML = `
-    <span style="color: #9CA3AF; font-size: 24px;">📝</span>
-    <span style="font-weight: 700; font-size: 20px; color: #9CA3AF;">0%</span>
-    <span style="font-size: 12px; color: var(--anthracite);">Non révisée</span>
-  `;
+    card.stats = { played: 0, correct: 0, wrong: 0, successRate: 0, artistCorrect: 0, titleCorrect: 0, dateCorrect: 0 };
+    card.lastPlayed = null;
+    
+    document.getElementById('statPlayed').textContent = '0';
+    document.getElementById('statCorrect').textContent = '0';
+    document.getElementById('statWrong').textContent = '0';
+    document.getElementById('statRate').textContent = '0%';
+    document.getElementById('statArtistRate').textContent = '0%';
+    document.getElementById('statTitleRate').textContent = '0%';
+    document.getElementById('statDateRate').textContent = '0%';
+    document.getElementById('lastPlayed').textContent = 'Jamais';
+    
+    // Recalculer le badge de maîtrise
+    const masteryBadge = document.getElementById('masteryBadge');
+    masteryBadge.innerHTML = `
+      <span style="color: #9CA3AF; font-size: 24px;">📝</span>
+      <span style="font-weight: 700; font-size: 20px; color: #9CA3AF;">0%</span>
+      <span style="font-size: 12px; color: var(--anthracite);">Non révisée</span>
+    `;
 
-  saveToStorage();
-  showToast('Statistiques réinitialisées', 'success');
+    saveToStorage();
+    showToast('Statistiques réinitialisées', 'success');
+  });
 }
 
 function cancelEdit() {
@@ -1335,7 +1335,7 @@ function importCards(event) {
   if (!file) return;
 
   const reader = new FileReader();
-  reader.onload = async (e) => {
+  reader.onload = (e) => {
     try {
       const imported = JSON.parse(e.target.result);
       
@@ -1350,34 +1350,33 @@ function importCards(event) {
         updateGlobalStats();
       }
 
+      // Si on a déjà des cartes, demander confirmation
       if (cards.length > 0) {
-        const replace = await showConfirm(
+        showConfirm(
           'Remplacer ou ajouter ?',
           `Vous avez déjà ${cards.length} carte(s).\n\nCliquez "Oui" pour REMPLACER toutes vos cartes par les ${imported.cards.length} carte(s) du fichier.\n\nCliquez "Non" pour AJOUTER les cartes aux existantes.`
-        );
-
-        if (replace) {
-          cards = imported.cards;
-          showToast(`✅ ${imported.cards.length} carte(s) restaurée(s) !`, 'success');
-        } else {
-          const newCards = imported.cards.map(card => ({
-            ...card,
-            id: Date.now() + Math.random(),
-            order: cards.length + card.order
-          }));
-          cards = [...cards, ...newCards];
-          showToast(`✅ ${newCards.length} carte(s) ajoutée(s) !`, 'success');
-        }
+        ).then(replace => {
+          if (replace) {
+            cards = imported.cards;
+            showToast(`✅ ${imported.cards.length} carte(s) restaurée(s) !`, 'success');
+          } else {
+            const newCards = imported.cards.map(card => ({
+              ...card,
+              id: Date.now() + Math.random(),
+              order: cards.length + card.order
+            }));
+            cards = [...cards, ...newCards];
+            showToast(`✅ ${newCards.length} carte(s) ajoutée(s) !`, 'success');
+          }
+          
+          finalizeImport();
+        });
       } else {
+        // Pas de cartes existantes, importer directement
         cards = imported.cards;
         showToast(`✅ ${imported.cards.length} carte(s) restaurée(s) !`, 'success');
+        finalizeImport();
       }
-
-      currentEditId = null;
-      document.getElementById('cardEditor').style.display = 'none';
-      
-      renderCardsList();
-      saveToStorage();
       
     } catch (err) {
       console.error(err);
@@ -1387,6 +1386,13 @@ function importCards(event) {
   
   reader.readAsText(file);
   event.target.value = '';
+}
+
+function finalizeImport() {
+  currentEditId = null;
+  document.getElementById('cardEditor').style.display = 'none';
+  renderCardsList();
+  saveToStorage();
 }
 
 // ==================== HISTORY ====================
@@ -1539,40 +1545,40 @@ function drawProgressChart() {
   ctx.fillText('📈 Évolution de vos performances', width / 2, 25);
 }
 
-async function clearHistory() {
-  const confirmed = await showConfirm(
+function clearHistory() {
+  showConfirm(
     'Effacer l\'historique ?',
     'Voulez-vous vraiment supprimer tout l\'historique de vos quiz ? Cette action est irréversible.'
-  );
-  
-  if (!confirmed) return;
-  
-  quizHistory = [];
-  StorageManager.saveHistory(quizHistory);
-  renderHistory();
-  showToast('Historique effacé', 'info');
+  ).then(confirmed => {
+    if (!confirmed) return;
+    
+    quizHistory = [];
+    StorageManager.saveHistory(quizHistory);
+    renderHistory();
+    showToast('Historique effacé', 'info');
+  });
 }
 
-async function deleteSession(sessionIndex) {
-  const confirmed = await showConfirm(
+function deleteSession(sessionIndex) {
+  showConfirm(
     'Supprimer cette session ?',
     'Voulez-vous vraiment supprimer cette session ? Cette action est irréversible.'
-  );
-  
-  if (!confirmed) return;
-  
-  const session = quizHistory[sessionIndex];
-  if (session && session.duration) {
-    totalQuizTime -= session.duration;
-    if (totalQuizTime < 0) totalQuizTime = 0;
-    StorageManager.saveTime(totalQuizTime);
-    updateGlobalStats();
-  }
-  
-  quizHistory.splice(sessionIndex, 1);
-  StorageManager.saveHistory(quizHistory);
-  renderSessionStats();
-  showToast('Session supprimée', 'info');
+  ).then(confirmed => {
+    if (!confirmed) return;
+    
+    const session = quizHistory[sessionIndex];
+    if (session && session.duration) {
+      totalQuizTime -= session.duration;
+      if (totalQuizTime < 0) totalQuizTime = 0;
+      StorageManager.saveTime(totalQuizTime);
+      updateGlobalStats();
+    }
+    
+    quizHistory.splice(sessionIndex, 1);
+    StorageManager.saveHistory(quizHistory);
+    renderSessionStats();
+    showToast('Session supprimée', 'info');
+  });
 }
 
 // ==================== MAINTENANCE ====================

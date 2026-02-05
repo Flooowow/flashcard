@@ -39,12 +39,16 @@
                 <span class="stat-mini-label">Cartes</span>
               </div>
               <div class="stat-mini-box">
-                <span class="stat-mini-number" id="globalToWork">0</span>
-                <span class="stat-mini-label">À travailler</span>
+                <span class="stat-mini-number" id="globalToReview">0</span>
+                <span class="stat-mini-label">À réviser</span>
               </div>
               <div class="stat-mini-box">
                 <span class="stat-mini-number stat-success" id="globalSuccessRate">0%</span>
                 <span class="stat-mini-label">Taux global</span>
+              </div>
+              <div class="stat-mini-box">
+                <span class="stat-mini-number" style="color: var(--gold);" id="globalAvgMastery">0%</span>
+                <span class="stat-mini-label">🎯 Maîtrise moy.</span>
               </div>
               <div class="stat-mini-box stat-mini-full">
                 <span class="stat-mini-number" id="globalTotalTime">0h 0min</span>
@@ -61,13 +65,18 @@
               <option value="date-asc">Date croissante</option>
               <option value="date-desc">Date décroissante</option>
               <option value="artist">Artiste A-Z</option>
-              <option value="towork">À travailler en premier</option>
+              <option value="mastery">🎯 Par maîtrise (priorité)</option>
             </select>
             
             <div class="backup-controls">
               <button id="exportBtn" class="btn btn-success">💾 Sauvegarder mes cartes</button>
               <button id="importBtn" class="btn btn-secondary">📂 Restaurer mes cartes</button>
               <input type="file" id="importFile" accept=".json" style="display: none;">
+              
+              <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--beige);">
+                <button id="repairBtn" class="btn btn-secondary btn-small" style="width: 100%; margin-bottom: 5px;">🔧 Réparer données</button>
+                <button id="recompressBtn" class="btn btn-secondary btn-small" style="width: 100%;">🔄 Recompresser</button>
+              </div>
             </div>
           </div>
         </div>
@@ -92,7 +101,11 @@
           <div class="editor-header">
             <h3>Édition de la carte</h3>
             <div class="header-actions">
-              <button id="toggleToWorkBtn" class="btn btn-warning">⭐ À travailler</button>
+              <div id="masteryBadge" class="mastery-badge">
+                <span style="color: #9CA3AF; font-size: 24px;">📝</span>
+                <span style="font-weight: 700; font-size: 20px; color: #9CA3AF;">0%</span>
+                <span style="font-size: 12px; color: var(--anthracite);">Non révisée</span>
+              </div>
               <button id="deleteCardBtn" class="btn btn-danger">🗑️ Supprimer</button>
             </div>
           </div>
@@ -138,6 +151,10 @@
                   <span class="stat-detail-label">Date</span>
                   <span class="stat-detail-value" id="statDateRate">0%</span>
                 </div>
+              </div>
+              <div style="text-align: center; margin-top: 10px; padding: 10px; background: var(--light-cream); border-radius: 8px; border: 1px solid var(--beige);">
+                <span style="font-size: 12px; color: var(--anthracite); font-weight: 600;">📅 Dernière révision :</span>
+                <span id="lastPlayed" style="font-size: 12px; color: var(--burgundy); font-weight: 700; margin-left: 5px;">Jamais</span>
               </div>
             </div>
             
@@ -204,7 +221,8 @@
           <!-- Sélecteur de mode -->
           <div class="quiz-mode-selector">
             <button class="quiz-mode-btn active" data-mode="all">📚 Toutes les cartes</button>
-            <button class="quiz-mode-btn" data-mode="towork">⭐ À travailler</button>
+            <button class="quiz-mode-btn" data-mode="smart">🧠 Révision intelligente</button>
+            <button class="quiz-mode-btn" data-mode="manual">⭐ Sélection manuelle</button>
           </div>
         </div>
         

@@ -85,6 +85,35 @@ const MasteryCalculator = {
   }
 };
 
+// ==================== IMAGE COMPRESSION ====================
+function compressImage(base64Image, maxWidth = 800, quality = 0.7) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      let width = img.width;
+      let height = img.height;
+      
+      // Redimensionner si trop grand
+      if (width > maxWidth) {
+        height = (height * maxWidth) / width;
+        width = maxWidth;
+      }
+      
+      canvas.width = width;
+      canvas.height = height;
+      
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, width, height);
+      
+      // Compresser en JPEG avec qualité réduite
+      const compressed = canvas.toDataURL('image/jpeg', quality);
+      resolve(compressed);
+    };
+    img.src = base64Image;
+  });
+}
+
 // ==================== DONNÉES ====================
 let cards = [];
 let currentCardId = null;
@@ -517,14 +546,31 @@ async function handleImageUpload(e) {
   const file = e.target.files[0];
   if (!file) return;
 
+  // Vérifier la taille du fichier (max 5MB)
+  if (file.size > 5 * 1024 * 1024) {
+    showToast('⚠️ Image trop volumineuse (max 5MB)', 'error');
+    return;
+  }
+
   const reader = new FileReader();
   reader.onload = async (event) => {
     const card = cards.find(c => c.id === currentEditId);
     if (card) {
-      card.image = event.target.result;
-      document.getElementById('imagePreview').innerHTML = 
-        `<img src="${event.target.result}" alt="Aperçu">`;
-      await saveToDatabase();
+      try {
+        // Compresser l'image avant de la sauvegarder
+        showToast('🔄 Compression de l\'image...', 'info');
+        const compressedImage = await compressImage(event.target.result, 800, 0.7);
+        
+        card.image = compressedImage;
+        document.getElementById('imagePreview').innerHTML = 
+          `<img src="${compressedImage}" alt="Aperçu">`;
+        
+        await saveToDatabase();
+        showToast('✅ Image compressée et sauvegardée', 'success');
+      } catch (error) {
+        console.error('Erreur compression:', error);
+        showToast('❌ Erreur lors de la compression', 'error');
+      }
     }
   };
   reader.readAsDataURL(file);
@@ -647,9 +693,12 @@ function updateTimerDisplay() {
 }
 
 function formatTime(seconds) {
-  const hours = Math.floor(seconds / 3600);
-  const minutes = Math.floor((seconds % 3600) / 60);
-  const secs = seconds % 60;
+  // Convertir en nombre si c'est une chaîne
+  const totalSeconds = typeof seconds === 'string' ? parseInt(seconds) || 0 : seconds || 0;
+  
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const secs = totalSeconds % 60;
   
   const hh = String(hours).padStart(2, '0');
   const mm = String(minutes).padStart(2, '0');
@@ -1156,8 +1205,10 @@ function importCards(event) {
         return;
       }
 
-      // Normaliser les cartes importées
-      imported.cards.forEach(card => {
+      // Normaliser et compresser les cartes importées
+      showToast('🔄 Compression des images...', 'info');
+      
+      for (let card of imported.cards) {
         if (!card.stats) {
           card.stats = { played: 0, correct: 0, wrong: 0, successRate: 0, artistCorrect: 0, titleCorrect: 0, dateCorrect: 0 };
         }
@@ -1168,7 +1219,16 @@ function importCards(event) {
         if (card.note === undefined) card.note = '';
         if (card.hasError === undefined) card.hasError = false;
         if (card.toWork === undefined) card.toWork = false;
-      });
+        
+        // Compresser l'image si elle existe et n'est pas déjà compressée
+        if (card.image && card.image.length > 100000) {
+          try {
+            card.image = await compressImage(card.image, 800, 0.7);
+          } catch (err) {
+            console.error('Erreur compression image carte:', err);
+          }
+        }
+      }
 
       if (imported.totalQuizTime !== undefined) {
         totalQuizTime = imported.totalQuizTime;

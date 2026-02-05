@@ -349,7 +349,7 @@ function setupEventListeners() {
 
   // Nouveaux boutons de maintenance
   document.getElementById('repairBtn').addEventListener('click', repairData);
-  document.getElementById('recompressBtn').addEventListener('click', () => StorageManager.recompress());
+  document.getElementById('recompressBtn').addEventListener('click', forceCleanup);
 
   // Mode quiz
   document.getElementById('verifyBtn').addEventListener('click', verifyAnswer);
@@ -1620,6 +1620,37 @@ function repairData() {
   cards = repaired;
   renderCardsList();
   showToast('🔧 Données réparées !', 'success');
+}
+
+function forceCleanup() {
+  try {
+    // Nettoyer toutes les anciennes clés
+    const keysToRemove = [
+      'flashcards',
+      'quizHistory', 
+      'totalQuizTime',
+      'quizart_migrated'
+    ];
+    
+    keysToRemove.forEach(key => {
+      localStorage.removeItem(key);
+    });
+    
+    // Forcer la recompression des données actuelles
+    if (cards.length > 0) {
+      StorageManager.save(cards);
+    }
+    if (quizHistory.length > 0) {
+      StorageManager.saveHistory(quizHistory);
+    }
+    StorageManager.saveTime(totalQuizTime);
+    
+    showToast('🧹 Nettoyage complet effectué !', 'success');
+    console.log('✅ localStorage nettoyé et données recompressées');
+  } catch (e) {
+    console.error('❌ Erreur nettoyage:', e);
+    showToast('❌ Erreur lors du nettoyage', 'error');
+  }
 }
 
 // ==================== STORAGE ====================

@@ -69,13 +69,13 @@
             </select>
             
             <div class="backup-controls">
-              <button id="exportBtn" class="btn btn-success">💾 Sauvegarder mes cartes</button>
-              <button id="importBtn" class="btn btn-secondary">📂 Restaurer mes cartes</button>
+              <button id="exportBtn" class="btn btn-success btn-icon" title="Sauvegarder mes cartes">💾</button>
+              <button id="importBtn" class="btn btn-secondary btn-icon" title="Restaurer mes cartes">📂</button>
               <input type="file" id="importFile" accept=".json" style="display: none;">
               
-              <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--beige);">
-                <button id="repairBtn" class="btn btn-secondary btn-small" style="width: 100%; margin-bottom: 5px;">🔧 Réparer données</button>
-                <button id="recompressBtn" class="btn btn-secondary btn-small" style="width: 100%;">🔄 Recompresser</button>
+              <div class="maintenance-controls">
+                <button id="repairBtn" class="btn btn-secondary btn-icon" title="Réparer données">🔧</button>
+                <button id="recompressBtn" class="btn btn-secondary btn-icon" title="Recompresser">🔄</button>
               </div>
             </div>
           </div>

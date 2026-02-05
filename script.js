@@ -1344,6 +1344,20 @@ function importCards(event) {
         return;
       }
 
+      // Normaliser les cartes importées
+      imported.cards.forEach(card => {
+        if (!card.stats) {
+          card.stats = { played: 0, correct: 0, wrong: 0, successRate: 0, artistCorrect: 0, titleCorrect: 0, dateCorrect: 0 };
+        }
+        if (!card.stats.artistCorrect) card.stats.artistCorrect = 0;
+        if (!card.stats.titleCorrect) card.stats.titleCorrect = 0;
+        if (!card.stats.dateCorrect) card.stats.dateCorrect = 0;
+        if (card.lastPlayed === undefined) card.lastPlayed = null;
+        if (card.note === undefined) card.note = '';
+        if (card.hasError === undefined) card.hasError = false;
+        if (card.toWork === undefined) card.toWork = false;
+      });
+
       if (imported.totalQuizTime !== undefined) {
         totalQuizTime = imported.totalQuizTime;
         StorageManager.saveTime(totalQuizTime);
@@ -1390,7 +1404,26 @@ function importCards(event) {
 
 function finalizeImport() {
   currentEditId = null;
-  document.getElementById('cardEditor').style.display = 'none';
+  
+  // Cacher l'éditeur
+  const editor = document.getElementById('cardEditor');
+  if (editor) {
+    editor.style.display = 'none';
+  }
+  
+  // Afficher l'état vide dans l'éditeur
+  const editorContent = document.querySelector('.editor-content');
+  if (editorContent && !document.querySelector('.empty-state')) {
+    editorContent.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon">🎨</div>
+        <h3>Aucune carte sélectionnée</h3>
+        <p>Sélectionnez une carte ou créez-en une nouvelle</p>
+      </div>
+    `;
+  }
+  
+  // Rafraîchir la liste et sauvegarder
   renderCardsList();
   saveToStorage();
 }

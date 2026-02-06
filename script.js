@@ -428,7 +428,7 @@ function deleteCard() {
   showConfirm(
     'Supprimer la carte ?',
     'Voulez-vous vraiment supprimer cette carte ? Cette action est irréversible.'
-  ).then(confirmed => {
+  ).then(async confirmed => {
     if (!confirmed) return;
 
     cards = cards.filter(c => c.id !== currentEditId);
@@ -458,7 +458,7 @@ function resetCardStats() {
   showConfirm(
     'Réinitialiser les statistiques ?',
     'Voulez-vous remettre à zéro toutes les statistiques de cette carte ?'
-  ).then(confirmed => {
+  ).then(async confirmed => {
     if (!confirmed) return;
 
     const card = cards.find(c => c.id === currentEditId);
@@ -489,7 +489,7 @@ function resetCardStats() {
   });
 }
 
-function cancelEdit() {
+async function cancelEdit() {
   if (currentEditId) {
     const card = cards.find(c => c.id === currentEditId);
     if (card && !card.artist && !card.title && !card.date) {
@@ -518,7 +518,7 @@ async function handleImageUpload(e) {
   if (!file) return;
 
   const reader = new FileReader();
-  reader.onload = (event) => {
+  reader.onload = async (event) => {
     const card = cards.find(c => c.id === currentEditId);
     if (card) {
       card.image = event.target.result;
@@ -751,7 +751,7 @@ function showQuizCard() {
   document.getElementById('nextCardBtn').disabled = false;
 }
 
-function verifyAnswer() {
+async function verifyAnswer() {
   const input = document.getElementById('quizInput');
   const userAnswer = input.value.trim().toLowerCase();
   
@@ -1198,7 +1198,7 @@ function importCards(event) {
         showConfirm(
           'Remplacer ou ajouter ?',
           `Vous avez déjà ${cards.length} carte(s).\n\nCliquez "Oui" pour REMPLACER toutes vos cartes par les ${imported.cards.length} carte(s) du fichier.\n\nCliquez "Non" pour AJOUTER les cartes aux existantes.`
-        ).then(replace => {
+        ).then(async replace => {
           if (replace) {
             cards = imported.cards;
             showToast(`✅ ${imported.cards.length} carte(s) restaurée(s) !`, 'success');
@@ -1231,7 +1231,7 @@ function importCards(event) {
   event.target.value = '';
 }
 
-function finalizeImport() {
+async function finalizeImport() {
   currentEditId = null;
   
   // Cacher l'éditeur
@@ -1411,7 +1411,7 @@ function clearHistory() {
   showConfirm(
     'Effacer l\'historique ?',
     'Voulez-vous vraiment supprimer tout l\'historique de vos quiz ? Cette action est irréversible.'
-  ).then(confirmed => {
+  ).then(async confirmed => {
     if (!confirmed) return;
     
     quizHistory = [];
@@ -1425,7 +1425,7 @@ function deleteSession(sessionIndex) {
   showConfirm(
     'Supprimer cette session ?',
     'Voulez-vous vraiment supprimer cette session ? Cette action est irréversible.'
-  ).then(confirmed => {
+  ).then(async confirmed => {
     if (!confirmed) return;
     
     const session = quizHistory[sessionIndex];

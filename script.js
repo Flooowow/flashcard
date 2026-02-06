@@ -1164,7 +1164,7 @@ function importCards(event) {
   if (!file) return;
 
   const reader = new FileReader();
-  reader.onload = (e) => {
+  reader.onload = async (e) => {
     try {
       const imported = JSON.parse(e.target.result);
       
@@ -1212,13 +1212,13 @@ function importCards(event) {
             showToast(`✅ ${newCards.length} carte(s) ajoutée(s) !`, 'success');
           }
           
-          finalizeImport();
+          await finalizeImport();
         });
       } else {
         // Pas de cartes existantes, importer directement
         cards = imported.cards;
         showToast(`✅ ${imported.cards.length} carte(s) restaurée(s) !`, 'success');
-        finalizeImport();
+        await finalizeImport();
       }
       
     } catch (err) {

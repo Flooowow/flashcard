@@ -1465,36 +1465,6 @@ async function forceCleanup() {
   }
 }
 
-// OLD CODE BELOW
-// const keysToRemove = [
-      'flashcards',
-      'quizHistory', 
-      'totalQuizTime',
-      'quizart_migrated'
-    ];
-    
-    keysToRemove.forEach(key => {
-      localStorage.removeItem(key);
-    });
-    
-    // Forcer la recompression des données actuelles
-    if (cards.length > 0) {
-      await DB.saveCards(cards);
-    }
-    if (quizHistory.length > 0) {
-      await DB.saveHistory(quizHistory);
-  await checkAchievements();
-    }
-    await DB.saveSetting("totalQuizTime", totalQuizTime);
-    
-    showToast('🧹 Nettoyage complet effectué !', 'success');
-    console.log('✅ localStorage nettoyé et données recompressées');
-  } catch (e) {
-    console.error('❌ Erreur nettoyage:', e);
-    showToast('❌ Erreur lors du nettoyage', 'error');
-  }
-}
-
 // ==================== STORAGE ====================
 async function saveToDatabase() {
   await DB.saveCards(cards);

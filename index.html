@@ -6,6 +6,137 @@
   <title>Quizart - Histoire de l'Art</title>
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="achievements.css">
+  <style>
+    /* Sidebar compacte */
+    .sidebar-header-compact {
+      padding: 15px;
+      background: var(--light-cream);
+      border-bottom: 2px solid var(--beige);
+    }
+
+    .sidebar-top-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .sidebar-top-row h2 {
+      margin: 0;
+      font-size: 18px;
+      color: var(--burgundy);
+    }
+
+    .btn-compact {
+      padding: 8px 16px !important;
+      font-size: 13px !important;
+      white-space: nowrap;
+    }
+
+    .stats-compact {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 12px;
+      padding: 10px;
+      background: white;
+      border-radius: 8px;
+      border: 1px solid var(--beige);
+    }
+
+    .stat-compact {
+      flex: 1;
+      text-align: center;
+    }
+
+    .stat-compact-value {
+      display: block;
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--burgundy);
+      line-height: 1.2;
+    }
+
+    .stat-compact-label {
+      display: block;
+      font-size: 10px;
+      color: var(--anthracite);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-top: 2px;
+    }
+
+    .sidebar-actions-row {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 12px;
+    }
+
+    .achievements-badge-compact {
+      flex: 1;
+      padding: 8px 12px;
+      background: linear-gradient(135deg, var(--gold) 0%, #DAA520 100%);
+      border-radius: 8px;
+      color: white;
+      font-weight: 700;
+      font-size: 12px;
+      cursor: pointer;
+      transition: transform 0.2s;
+      text-align: center;
+      box-shadow: 0 2px 6px rgba(212, 175, 55, 0.3);
+    }
+
+    .achievements-badge-compact:hover {
+      transform: translateY(-2px);
+    }
+
+    .btn-compact-icon {
+      width: 40px;
+      height: 40px;
+      padding: 0;
+      border: none;
+      background: white;
+      border: 2px solid var(--beige);
+      border-radius: 8px;
+      font-size: 18px;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .btn-compact-icon:hover {
+      background: var(--cream);
+      border-color: var(--gold);
+      transform: translateY(-2px);
+    }
+
+    .sort-select-compact {
+      width: 100%;
+      padding: 8px 12px;
+      border: 2px solid var(--beige);
+      border-radius: 8px;
+      background: white;
+      color: var(--anthracite);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: border-color 0.2s;
+    }
+
+    .sort-select-compact:hover {
+      border-color: var(--gold);
+    }
+
+    .sort-select-compact:focus {
+      outline: none;
+      border-color: var(--burgundy);
+    }
+
+    .cards-list {
+      max-height: calc(100vh - 230px);
+    }
+  </style>
 </head>
 <body>
   <!-- Header -->
@@ -28,68 +159,53 @@
     <div class="editor-layout">
       <!-- Sidebar avec liste des cartes -->
       <aside class="cards-sidebar">
-        <div class="sidebar-header">
-          <h2>📚 Cartes</h2>
-          
-          <!-- Statistiques globales -->
-          <div id="globalStats" class="global-stats">
-            <h3>📊 Mes statistiques</h3>
-            <div class="stats-mini-grid">
-              <div class="stat-mini-box">
-                <span class="stat-mini-number" id="globalTotalCards">0</span>
-                <span class="stat-mini-label">Cartes</span>
-              </div>
-              <div class="stat-mini-box">
-                <span class="stat-mini-number" id="globalToReview">0</span>
-                <span class="stat-mini-label">À réviser</span>
-              </div>
-              <div class="stat-mini-box">
-                <span class="stat-mini-number stat-success" id="globalSuccessRate">0%</span>
-                <span class="stat-mini-label">Taux global</span>
-              </div>
-              <div class="stat-mini-box">
-                <span class="stat-mini-number" style="color: var(--gold);" id="globalAvgMastery">0%</span>
-                <span class="stat-mini-label">🎯 Maîtrise moy.</span>
-              </div>
-              <div class="stat-mini-box stat-mini-full">
-                <span class="stat-mini-number" id="globalTotalTime">0h 0min</span>
-                <span class="stat-mini-label">⏱️ Temps total quiz</span>
-              </div>
-            </div>
-            <button id="viewSessionStatsBtn" class="btn btn-secondary btn-small" style="margin-top: 10px; width: 100%;">📊 Voir les sessions</button>
+        <!-- Header compact -->
+        <div class="sidebar-header-compact">
+          <div class="sidebar-top-row">
+            <h2>📚 Cartes</h2>
+            <button id="addCardBtn" class="btn btn-primary btn-compact">➕ Nouvelle</button>
           </div>
           
-          <!-- Badge des succès -->
-          <div style="padding: 15px 0;">
-            <div class="achievements-badge" id="achievementsBadge" onclick="showAchievementsModal()">
-              <span class="achievements-badge-icon">🏆</span>
-              <span class="achievements-badge-count">
-                <span id="achievementsCount">0</span>/<span id="achievementsTotal">32</span>
-              </span>
+          <!-- Stats ultra-compactes -->
+          <div class="stats-compact">
+            <div class="stat-compact">
+              <span class="stat-compact-value" id="globalTotalCards">0</span>
+              <span class="stat-compact-label">cartes</span>
+            </div>
+            <div class="stat-compact">
+              <span class="stat-compact-value" id="globalToReview">0</span>
+              <span class="stat-compact-label">à réviser</span>
+            </div>
+            <div class="stat-compact">
+              <span class="stat-compact-value stat-success" id="globalSuccessRate">0%</span>
+              <span class="stat-compact-label">réussite</span>
+            </div>
+            <div class="stat-compact">
+              <span class="stat-compact-value" style="color: var(--gold);" id="globalAvgMastery">0%</span>
+              <span class="stat-compact-label">maîtrise</span>
             </div>
           </div>
           
-          <div class="sidebar-controls">
-            <button id="addCardBtn" class="btn btn-primary">➕ Nouvelle carte</button>
-            <select id="sortSelect" class="sort-select">
-              <option value="order">Ordre par défaut</option>
-              <option value="date-asc">Date croissante</option>
-              <option value="date-desc">Date décroissante</option>
-              <option value="artist">Artiste A-Z</option>
-              <option value="mastery">🎯 Par maîtrise (priorité)</option>
-            </select>
-            
-            <div class="backup-controls">
-              <button id="exportBtn" class="btn btn-success btn-icon" title="Sauvegarder mes cartes">💾</button>
-              <button id="importBtn" class="btn btn-secondary btn-icon" title="Restaurer mes cartes">📂</button>
-              <input type="file" id="importFile" accept=".json" style="display: none;">
-              
-              <div class="maintenance-controls">
-                <button id="repairBtn" class="btn btn-secondary btn-icon" title="Réparer données">🔧</button>
-                <button id="recompressBtn" class="btn btn-secondary btn-icon" title="Recompresser">🔄</button>
-              </div>
+          <!-- Badge succès + boutons en ligne -->
+          <div class="sidebar-actions-row">
+            <div class="achievements-badge-compact" id="achievementsBadge" onclick="showAchievementsModal()" title="Mes succès">
+              🏆 <span id="achievementsCount">0</span>/<span id="achievementsTotal">32</span>
             </div>
+            <button id="viewSessionStatsBtn" class="btn-compact-icon" title="Voir les sessions">📊</button>
+            <button id="exportBtn" class="btn-compact-icon" title="Sauvegarder">💾</button>
+            <button id="importBtn" class="btn-compact-icon" title="Restaurer">📂</button>
+            <button id="repairBtn" class="btn-compact-icon" title="Réparer">🔧</button>
+            <input type="file" id="importFile" accept=".json" style="display: none;">
           </div>
+          
+          <!-- Tri compact -->
+          <select id="sortSelect" class="sort-select-compact">
+            <option value="order">📋 Ordre par défaut</option>
+            <option value="date-asc">📅 Date ↑</option>
+            <option value="date-desc">📅 Date ↓</option>
+            <option value="artist">👤 Artiste A-Z</option>
+            <option value="mastery">🎯 Priorité</option>
+          </select>
         </div>
         
         <div id="cardsList" class="cards-list">

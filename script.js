@@ -367,6 +367,10 @@ function selectCard(cardId) {
   document.getElementById('statWrong').textContent = card.stats.wrong;
   document.getElementById('statRate').textContent = card.stats.successRate + '%';
   
+  // Stats rapides dans le summary
+  document.getElementById('statPlayedQuick').textContent = card.stats.played;
+  document.getElementById('statRateQuick').textContent = card.stats.successRate + '%';
+  
   const artistRate = card.stats.played > 0 ? Math.round((card.stats.artistCorrect / card.stats.played) * 100) : 0;
   const titleRate = card.stats.played > 0 ? Math.round((card.stats.titleCorrect / card.stats.played) * 100) : 0;
   const dateRate = card.stats.played > 0 ? Math.round((card.stats.dateCorrect / card.stats.played) * 100) : 0;

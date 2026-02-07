@@ -136,6 +136,98 @@
     .cards-list {
       max-height: calc(100vh - 230px);
     }
+
+    /* Stats repliables */
+    .stats-collapsible {
+      margin: 0 0 20px 0;
+      border: 2px solid var(--beige);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .stats-summary {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 16px;
+      background: var(--light-cream);
+      cursor: pointer;
+      list-style: none;
+      user-select: none;
+      transition: background 0.2s;
+    }
+
+    .stats-summary:hover {
+      background: var(--cream);
+    }
+
+    .stats-summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .stats-summary-icon {
+      font-size: 20px;
+    }
+
+    .stats-summary-text {
+      font-weight: 700;
+      color: var(--burgundy);
+      flex: 1;
+    }
+
+    .stats-summary-quick {
+      font-size: 13px;
+      color: var(--anthracite);
+      font-weight: 600;
+    }
+
+    .stats-content-compact {
+      padding: 16px;
+      background: white;
+    }
+
+    .stats-row-compact {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+      gap: 10px;
+    }
+
+    .stat-compact-box {
+      text-align: center;
+      padding: 10px;
+      background: var(--light-cream);
+      border-radius: 8px;
+      border: 1px solid var(--beige);
+    }
+
+    .stat-compact-box .stat-compact-label {
+      display: block;
+      font-size: 11px;
+      color: var(--anthracite);
+      margin-bottom: 4px;
+      font-weight: 600;
+    }
+
+    .stat-compact-box .stat-compact-value {
+      display: block;
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--burgundy);
+    }
+
+    .stats-footer-compact {
+      margin-top: 12px;
+      padding: 10px;
+      background: var(--light-cream);
+      border-radius: 8px;
+      text-align: center;
+      font-size: 12px;
+      color: var(--anthracite);
+    }
+
+    .stats-footer-compact strong {
+      color: var(--burgundy);
+    }
   </style>
 </head>
 <body>
@@ -237,56 +329,59 @@
             </div>
           </div>
 
-          <!-- Statistiques de la carte -->
-          <div id="cardStats" class="card-stats">
-            <h4>📊 Statistiques</h4>
-            <div class="stats-grid">
-              <div class="stat-box">
-                <span class="stat-number" id="statPlayed">0</span>
-                <span class="stat-label">Fois jouée</span>
-              </div>
-              <div class="stat-box">
-                <span class="stat-number stat-success" id="statCorrect">0</span>
-                <span class="stat-label">Réussites totales</span>
-              </div>
-              <div class="stat-box">
-                <span class="stat-number stat-error" id="statWrong">0</span>
-                <span class="stat-label">Erreurs</span>
-              </div>
-              <div class="stat-box">
-                <span class="stat-number stat-rate" id="statRate">0%</span>
-                <span class="stat-label">Taux global</span>
-              </div>
-            </div>
+          <!-- Stats compactes repliables -->
+          <details class="stats-collapsible">
+            <summary class="stats-summary">
+              <span class="stats-summary-icon">📊</span>
+              <span class="stats-summary-text">Statistiques</span>
+              <span class="stats-summary-quick">
+                <span id="statPlayedQuick">0</span> révisions · 
+                <span id="statRateQuick">0%</span> réussite
+              </span>
+            </summary>
             
-            <!-- Statistiques détaillées par composant -->
-            <div class="stats-detailed">
-              <h5>📈 Taux de réussite par composant</h5>
-              <div class="stats-detail-grid">
-                <div class="stat-detail-box">
-                  <span class="stat-detail-icon">👤</span>
-                  <span class="stat-detail-label">Artiste</span>
-                  <span class="stat-detail-value" id="statArtistRate">0%</span>
+            <div class="stats-content-compact">
+              <div class="stats-row-compact">
+                <div class="stat-compact-box">
+                  <span class="stat-compact-label">👤 Artiste</span>
+                  <span class="stat-compact-value" id="statArtistRate">0%</span>
                 </div>
-                <div class="stat-detail-box">
-                  <span class="stat-detail-icon">🎨</span>
-                  <span class="stat-detail-label">Titre</span>
-                  <span class="stat-detail-value" id="statTitleRate">0%</span>
+                <div class="stat-compact-box">
+                  <span class="stat-compact-label">🎨 Titre</span>
+                  <span class="stat-compact-value" id="statTitleRate">0%</span>
                 </div>
-                <div class="stat-detail-box">
-                  <span class="stat-detail-icon">📅</span>
-                  <span class="stat-detail-label">Date</span>
-                  <span class="stat-detail-value" id="statDateRate">0%</span>
+                <div class="stat-compact-box">
+                  <span class="stat-compact-label">📅 Date</span>
+                  <span class="stat-compact-value" id="statDateRate">0%</span>
                 </div>
               </div>
-              <div style="text-align: center; margin-top: 10px; padding: 10px; background: var(--light-cream); border-radius: 8px; border: 1px solid var(--beige);">
-                <span style="font-size: 12px; color: var(--anthracite); font-weight: 600;">📅 Dernière révision :</span>
-                <span id="lastPlayed" style="font-size: 12px; color: var(--burgundy); font-weight: 700; margin-left: 5px;">Jamais</span>
+              
+              <div class="stats-row-compact" style="margin-top: 8px;">
+                <div class="stat-compact-box">
+                  <span class="stat-compact-label">Jouée</span>
+                  <span class="stat-compact-value" id="statPlayed">0</span>
+                </div>
+                <div class="stat-compact-box">
+                  <span class="stat-compact-label">✓ Réussies</span>
+                  <span class="stat-compact-value stat-success" id="statCorrect">0</span>
+                </div>
+                <div class="stat-compact-box">
+                  <span class="stat-compact-label">✗ Erreurs</span>
+                  <span class="stat-compact-value stat-error" id="statWrong">0</span>
+                </div>
+                <div class="stat-compact-box">
+                  <span class="stat-compact-label">Taux</span>
+                  <span class="stat-compact-value stat-rate" id="statRate">0%</span>
+                </div>
               </div>
+              
+              <div class="stats-footer-compact">
+                📅 Dernière révision : <strong id="lastPlayed">Jamais</strong>
+              </div>
+              
+              <button id="resetStatsBtn" class="btn btn-secondary btn-small" style="margin-top: 10px; width: 100%;">🔄 Réinitialiser</button>
             </div>
-            
-            <button id="resetStatsBtn" class="btn btn-secondary btn-small">🔄 Réinitialiser les stats</button>
-          </div>
+          </details>
 
           <div class="form-group">
             <label for="cardImage">Image de l'œuvre *</label>

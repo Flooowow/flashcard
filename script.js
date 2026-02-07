@@ -158,9 +158,8 @@ function setupEventListeners() {
   });
   document.getElementById('importFile').addEventListener('change', importCards);
 
-  // Nouveaux boutons de maintenance
+  // Bouton de maintenance
   document.getElementById('repairBtn').addEventListener('click', repairData);
-  document.getElementById('recompressBtn').addEventListener('click', forceCleanup);
 
   // Mode quiz
   document.getElementById('verifyBtn').addEventListener('click', verifyAnswer);
@@ -634,7 +633,6 @@ function updateGlobalStats() {
   document.getElementById('globalToReview').textContent = cardsToReview;
   document.getElementById('globalSuccessRate').textContent = globalSuccessRate + '%';
   document.getElementById('globalAvgMastery').textContent = avgMastery + '%';
-  document.getElementById('globalTotalTime').textContent = formatTime(totalQuizTime);
 }
 
 // ==================== QUIZ MODE ====================
